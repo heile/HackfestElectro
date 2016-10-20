@@ -37,13 +37,23 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "nRF24L01.h"
+
 extern TIM_HandleTypeDef htim2;
+
+NRF24L01_Transmit_Status_t transmissionStatus;
+NRF24L01_IRQ_t NRF_IRQ;
+/* Data received and data for send */
+uint8_t dataIn[35];
 
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern PCD_HandleTypeDef hpcd_USB_FS;
+extern SPI_HandleTypeDef hspi2;
 extern TIM_HandleTypeDef htim16;
 extern TIM_HandleTypeDef htim17;
+extern UART_HandleTypeDef huart2;
 
 /******************************************************************************/
 /*            Cortex-M0 Processor Interruption and Exception Handlers         */ 
@@ -133,10 +143,40 @@ void EXTI4_15_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI4_15_IRQn 0 */
 
+	NRF24L01_Read_Interrupts(&NRF_IRQ);
+	NRF24L01_Clear_Interrupts(NRF_IRQ.Status);
+	// Check if transmitted OK
+	if (NRF_IRQ.F.DataSent) {
+		//Save transmission status
+		transmissionStatus = NRF24L01_Transmit_Status_Ok;
+		// Clear FIFOs
+		NRF24L01_Flush_Tx();
+		// Go back to RX mode
+		NRF24L01_PowerUpRx();
+	}
+
+	//Check if max retransmission reached and last transmission failed
+	if (NRF_IRQ.F.MaxRT) {
+		// Save transmission status
+		transmissionStatus = NRF24L01_Transmit_Status_Lost;
+		// Go back to RX mode
+		NRF24L01_PowerUpRx();
+	}
+
+	// If data is ready on NRF24L01+
+	if (NRF_IRQ.F.DataReady) {
+		//Get data from NRF24L01+
+		memset(dataIn, 0x00, 32);
+		NRF24L01_GetData(dataIn);
+		// Send it back, NRF goes automatically to TX mode
+//		NRF24L01_Transmit(dataIn);
+		CDC_Transmit_FS(dataIn, strlen(dataIn));
+	}
+
   /* USER CODE END EXTI4_15_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);
   /* USER CODE BEGIN EXTI4_15_IRQn 1 */
-  HAL_GPIO_TogglePin(RF_CE_GPIO_Port, RF_CE_Pin);
+
   /* USER CODE END EXTI4_15_IRQn 1 */
 }
 
@@ -160,27 +200,53 @@ void TIM16_IRQHandler(void)
 void TIM17_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM17_IRQn 0 */
-	static char sens = 0;
-	static uint32_t value = 0;
-	if (sens == 0) {
-		if (value < 1000) {
-			value++;
-		} else {
-			sens = 1;
-		}
-	} else {
-		if (value > 0) {
-			value--;
-		} else {
-			sens = 0;
-		}
-	}
-	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, value);
+
   /* USER CODE END TIM17_IRQn 0 */
   HAL_TIM_IRQHandler(&htim17);
   /* USER CODE BEGIN TIM17_IRQn 1 */
-
   /* USER CODE END TIM17_IRQn 1 */
+}
+
+/**
+* @brief This function handles SPI2 global interrupt.
+*/
+void SPI2_IRQHandler(void)
+{
+  /* USER CODE BEGIN SPI2_IRQn 0 */
+
+  /* USER CODE END SPI2_IRQn 0 */
+  HAL_SPI_IRQHandler(&hspi2);
+  /* USER CODE BEGIN SPI2_IRQn 1 */
+
+  /* USER CODE END SPI2_IRQn 1 */
+}
+
+/**
+* @brief This function handles USART2 global interrupt / USART2 wake-up interrupt through EXTI line 26.
+*/
+void USART2_IRQHandler(void)
+{
+  /* USER CODE BEGIN USART2_IRQn 0 */
+
+  /* USER CODE END USART2_IRQn 0 */
+  HAL_UART_IRQHandler(&huart2);
+  /* USER CODE BEGIN USART2_IRQn 1 */
+
+  /* USER CODE END USART2_IRQn 1 */
+}
+
+/**
+* @brief This function handles USB global interrupt / USB wake-up interrupt through EXTI line 18.
+*/
+void USB_IRQHandler(void)
+{
+  /* USER CODE BEGIN USB_IRQn 0 */
+
+  /* USER CODE END USB_IRQn 0 */
+  HAL_PCD_IRQHandler(&hpcd_USB_FS);
+  /* USER CODE BEGIN USB_IRQn 1 */
+
+  /* USER CODE END USB_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

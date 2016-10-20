@@ -53,6 +53,9 @@ void EXTI2_3_IRQHandler(void);
 void EXTI4_15_IRQHandler(void);
 void TIM16_IRQHandler(void);
 void TIM17_IRQHandler(void);
+void SPI2_IRQHandler(void);
+void USART2_IRQHandler(void);
+void USB_IRQHandler(void);
 
 #ifdef __cplusplus
 }
