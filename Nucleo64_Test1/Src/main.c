@@ -56,6 +56,7 @@ ADC_HandleTypeDef hadc;
 
 I2C_HandleTypeDef hi2c1;
 
+SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi2;
 
 TIM_HandleTypeDef htim2;
@@ -64,7 +65,6 @@ TIM_HandleTypeDef htim16;
 TIM_HandleTypeDef htim17;
 
 UART_HandleTypeDef huart1;
-UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
@@ -85,8 +85,7 @@ static void MX_ADC_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM17_Init(void);
 static void MX_TIM16_Init(void);
-static void MX_USART2_UART_Init(void);
-static void MX_NVIC_Init(void);
+static void MX_SPI1_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
                                 
@@ -117,8 +116,8 @@ void run_seven_led() {
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-	HAL_UART_Transmit(&huart2, dataOut, 1, 10);		//Replay Message received
-	HAL_UART_Receive_IT(&huart2, dataOut, 1);
+//	HAL_UART_Transmit(&huart2, dataOut, 1, 10);		//Replay Message received
+//	HAL_UART_Receive_IT(&huart2, dataOut, 1);
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
@@ -169,16 +168,23 @@ int main(void)
   MX_TIM17_Init();
   MX_TIM16_Init();
   MX_USB_DEVICE_Init();
-  MX_USART2_UART_Init();
-
-  /* Initialize interrupts */
-  MX_NVIC_Init();
+  MX_SPI1_Init();
 
   /* USER CODE BEGIN 2 */
 
 	HAL_TIM_Base_Start(&htim2);
 
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
+	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
+
+
+	HAL_TIM_Base_Start(&htim3);
+
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
 
 	HAL_TIM_Base_Start_IT(&htim17);
 
@@ -200,9 +206,9 @@ int main(void)
 
 	CDC_Transmit_FS(dataOut, strlen(dataOut));					//USB(Virtual Com Port) send "System Start!" to PC
 
-	HAL_UART_Transmit(&huart2, dataOut, strlen(dataOut), 100);	//Uart send message "System Start!"
+//	HAL_UART_Transmit(&huart2, dataOut, strlen(dataOut), 100);	//Uart send message "System Start!"
 
-	HAL_UART_Receive_IT(&huart2, dataOut, 1);					//Interruption init for UART Receive
+//	HAL_UART_Receive_IT(&huart2, dataOut, 1);					//Interruption init for UART Receive
 
   /* USER CODE END 2 */
 
@@ -227,7 +233,8 @@ int main(void)
 		if (HAL_TIM_Base_Init(&htim17) != HAL_OK) {
 			Error_Handler();
 		}
-
+		HAL_GPIO_TogglePin(GPIOB, IR_OUT_Pin);
+		CDC_Transmit_FS(dataOut, strlen(dataOut));
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
@@ -278,9 +285,8 @@ void SystemClock_Config(void)
   }
 
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB|RCC_PERIPHCLK_USART1
-                              |RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_I2C1;
+                              |RCC_PERIPHCLK_I2C1;
   PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK1;
-  PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
   PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_HSI;
   PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
 
@@ -299,15 +305,6 @@ void SystemClock_Config(void)
 
   /* SysTick_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
-}
-
-/** NVIC Configuration
-*/
-static void MX_NVIC_Init(void)
-{
-  /* USART2_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(USART2_IRQn);
 }
 
 /* ADC init function */
@@ -369,6 +366,31 @@ static void MX_I2C1_Init(void)
     /**Configure Analogue filter 
     */
   if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+}
+
+/* SPI1 init function */
+static void MX_SPI1_Init(void)
+{
+
+  hspi1.Instance = SPI1;
+  hspi1.Init.Mode = SPI_MODE_MASTER;
+  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi1.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi1.Init.NSS = SPI_NSS_SOFT;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
+  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi1.Init.CRCPolynomial = 7;
+  hspi1.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
+  hspi1.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  if (HAL_SPI_Init(&hspi1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -439,6 +461,18 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
 
+  sConfigOC.Pulse = 100;
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sConfigOC.Pulse = 800;
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
   HAL_TIM_MspPostInit(&htim2);
 
 }
@@ -453,7 +487,7 @@ static void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 0;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 0;
+  htim3.Init.Period = 1000;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
   {
@@ -468,7 +502,7 @@ static void MX_TIM3_Init(void)
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 300;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
@@ -481,6 +515,7 @@ static void MX_TIM3_Init(void)
     Error_Handler();
   }
 
+  sConfigOC.Pulse = 30;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
   {
     Error_Handler();
@@ -545,27 +580,6 @@ static void MX_USART1_UART_Init(void)
 
 }
 
-/* USART2 init function */
-static void MX_USART2_UART_Init(void)
-{
-
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_ENABLE;
-  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-}
-
 /* USART3 init function */
 static void MX_USART3_UART_Init(void)
 {
@@ -593,9 +607,6 @@ static void MX_USART3_UART_Init(void)
         * Output
         * EVENT_OUT
         * EXTI
-     PB4   ------> SPI1_MISO
-     PB5   ------> SPI1_MOSI
-     PB9   ------> IR_OUT
 */
 static void MX_GPIO_Init(void)
 {
@@ -604,16 +615,15 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
-  /*Configure GPIO pin : B1_Pin */
-  GPIO_InitStruct.Pin = B1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
+  /*Configure GPIO pin : PC13_Pin */
+  GPIO_InitStruct.Pin = PC13_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(PC13_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : Button_Fn1_Pin Button_Fn2_Pin IR_REC_Pin */
   GPIO_InitStruct.Pin = Button_Fn1_Pin|Button_Fn2_Pin|IR_REC_Pin;
@@ -627,19 +637,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(RF_IRQ_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : RF_CE_Pin */
-  GPIO_InitStruct.Pin = RF_CE_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(RF_CE_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : SPI2_CS_RF_Pin */
-  GPIO_InitStruct.Pin = SPI2_CS_RF_Pin;
+  /*Configure GPIO pins : RF_CE_Pin SPI2_CS_RF_Pin */
+  GPIO_InitStruct.Pin = RF_CE_Pin|SPI2_CS_RF_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(SPI2_CS_RF_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : TEST_OUT_PIN_Pin EEPROM_WP_Pin RAM_HOLD_Pin */
   GPIO_InitStruct.Pin = TEST_OUT_PIN_Pin|EEPROM_WP_Pin|RAM_HOLD_Pin;
@@ -655,24 +658,15 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(SPI1_CS_RAM_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SPI1_MISO_RAM_Pin SPI1_MOSI_RAM_Pin */
-  GPIO_InitStruct.Pin = SPI1_MISO_RAM_Pin|SPI1_MOSI_RAM_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF0_SPI1;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PB9 */
-  GPIO_InitStruct.Pin = GPIO_PIN_9;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  /*Configure GPIO pin : IR_OUT_Pin */
+  GPIO_InitStruct.Pin = IR_OUT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF0_IR;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(IR_OUT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(RF_CE_GPIO_Port, RF_CE_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, RF_CE_Pin|IR_OUT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SPI2_CS_RF_GPIO_Port, SPI2_CS_RF_Pin, GPIO_PIN_SET);
