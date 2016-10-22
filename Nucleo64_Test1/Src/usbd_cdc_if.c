@@ -99,6 +99,16 @@ uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
+
+uint8_t HFusbRxHead;
+uint8_t HFusbRxTail;
+uint8_t HFusbRxBuffer[HF_USB_RX_BUFFER_SIZE];
+
+uint8_t HFusbRxCount;
+
+
+
+
 /* USER CODE END PRIVATE_VARIABLES */
 
 /**
@@ -125,6 +135,23 @@ static int8_t CDC_Control_FS  (uint8_t cmd, uint8_t* pbuf, uint16_t length);
 static int8_t CDC_Receive_FS  (uint8_t* pbuf, uint32_t *Len);
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
+
+HF_FUNCTION_RETURN_STATE HF_USB_Read(uint8_t * fifo) {
+
+	if (HFusbRxCount == 0) {
+		return HF_FUNCTION_RETURN_BUFFER_EMPTY;
+	}
+
+	fifo[0] = HFusbRxBuffer[HFusbRxTail++];
+	if (sizeof(HFusbRxBuffer) <= HFusbRxTail) {
+		HFusbRxTail = 0;
+	}
+	HFusbRxCount--;
+
+	return HF_FUNCTION_RETURN_OK;
+}
+
+
 /* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
 
 /**
@@ -149,6 +176,10 @@ USBD_CDC_ItfTypeDef USBD_Interface_fops_FS =
 static int8_t CDC_Init_FS(void)
 { 
   /* USER CODE BEGIN 3 */ 
+	HFusbRxHead = 0;
+	HFusbRxTail = 0;
+	HFusbRxCount = 0;
+
   /* Set Application Buffers */
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
@@ -183,15 +214,15 @@ static int8_t CDC_Control_FS  (uint8_t cmd, uint8_t* pbuf, uint16_t length)
   switch (cmd)
   {
   case CDC_SEND_ENCAPSULATED_COMMAND:
- 
+
     break;
 
   case CDC_GET_ENCAPSULATED_RESPONSE:
- 
+
     break;
 
   case CDC_SET_COMM_FEATURE:
- 
+
     break;
 
   case CDC_GET_COMM_FEATURE:
@@ -213,17 +244,17 @@ static int8_t CDC_Control_FS  (uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /*                                        2 - 2 Stop bits                      */
   /* 5      | bParityType |  1   | Number | Parity                               */
   /*                                        0 - None                             */
-  /*                                        1 - Odd                              */ 
+  /*                                        1 - Odd                              */
   /*                                        2 - Even                             */
   /*                                        3 - Mark                             */
   /*                                        4 - Space                            */
   /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
   /*******************************************************************************/
-  case CDC_SET_LINE_CODING:   
-	
+  case CDC_SET_LINE_CODING:
+
     break;
 
-  case CDC_GET_LINE_CODING:     
+  case CDC_GET_LINE_CODING:
 
     break;
 
@@ -232,9 +263,9 @@ static int8_t CDC_Control_FS  (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
   case CDC_SEND_BREAK:
- 
-    break;    
-    
+
+    break;
+
   default:
     break;
   }
@@ -261,6 +292,19 @@ static int8_t CDC_Control_FS  (uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS (uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
+	uint32_t size = 0;
+	while (size < *Len) {
+		HFusbRxBuffer[HFusbRxHead++] = Buf[size];
+		if (sizeof(HFusbRxBuffer) <= HFusbRxHead) {
+			HFusbRxHead = 0;
+		}
+		HFusbRxCount++;
+		size++;
+		if (size>=sizeof(HFusbRxBuffer)){
+			break;
+		}
+	}
+
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
   return (USBD_OK);

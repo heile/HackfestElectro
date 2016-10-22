@@ -39,6 +39,8 @@
 
 #include "nRF24L01.h"
 
+#include "HF_timer_service.h"
+
 extern TIM_HandleTypeDef htim2;
 
 NRF24L01_Transmit_Status_t transmissionStatus;
@@ -185,7 +187,19 @@ void EXTI4_15_IRQHandler(void)
 void TIM16_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM16_IRQn 0 */
-
+	static uint8_t ms=0;
+	static uint8_t second=0;
+	hd_system_timer.millisecond++;
+	ms++;
+	if (ms>=60){
+		hd_system_timer.second++;
+		second++;
+		if (second>=60){
+			hd_system_timer.minute++;
+			second=0;
+		}
+		ms = 0;
+	}
   /* USER CODE END TIM16_IRQn 0 */
   HAL_TIM_IRQHandler(&htim16);
   /* USER CODE BEGIN TIM16_IRQn 1 */
