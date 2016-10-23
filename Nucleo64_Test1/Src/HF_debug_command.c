@@ -7,22 +7,25 @@
 
 #include "HF_debug_command.h"
 
+void HFsetArg(char * message);
+
 void HF_debugCommandSetBuffer(char c) {
 	static uint8_t i = 0;
 	if (c == 0x7F) {
 		if (i > 0)
 			i -= 1;
+		HF_debug_command_buffer[i] = 0x7F;
+		CDC_Transmit_FS(&HF_debug_command_buffer[i], 1);
 		HF_debug_command_buffer[i] = 0x00;
-//		putch(0x7F);
 	} else if (c >= ' ' && c <= '~') {
 		HF_debug_command_buffer[i++] = c;
 		HF_debug_command_buffer[i] = 0x00;
-//		printf("%c", c);
+		CDC_Transmit_FS(&c, 1);
 	} else {
 		//printf(" %#X ", c);
 	}
 	if (c == '\r') {
-//		debugCommand(HF_debug_command_buffer);
+		HFdebugCommand(HF_debug_command_buffer);
 		i = 0;
 	}
 }
@@ -49,6 +52,7 @@ void HFsetArg(char * message) {
         }
     }
     HF_argc++;
+
 }
 
 
@@ -57,15 +61,15 @@ void HFdebugCommand(char * command) {
 
     //                    printf("\n\rDebug Command message: %s\n\r\n\r", debug_command_buffer);
 
-    setArg(command);
+    HFsetArg(command);
 
-//    printf("\n\rDebug Command:  ");
+    printf("\r\nDebug Command:  ");
     for (index = 0; index < HF_argc; index++) {
-//        printf("%s ", argv[index]);
+        printf("%s ", HF_argv[index]);
     }
-//    printf("\n\r");
+    printf("\r\n");
 
     if (strcmp(HF_argv[0], "command") == 0) {
-
+    	printf("Hello\r\n");
     }
 }

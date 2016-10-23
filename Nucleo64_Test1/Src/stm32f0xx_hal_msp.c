@@ -553,6 +553,9 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
     */
     HAL_GPIO_DeInit(GPIOA, PA9_UART1_TX_Pin|PA10_UART1_RX_Pin);
 
+    /* Peripheral interrupt DeInit*/
+    HAL_NVIC_DisableIRQ(USART1_IRQn);
+
   /* USER CODE BEGIN USART1_MspDeInit 1 */
 
   /* USER CODE END USART1_MspDeInit 1 */
@@ -576,6 +579,9 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
     HAL_GPIO_DeInit(GPIOC, USART3_TX_RS232_Pin|USART3_RX_RS232_Pin);
 
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_1);
+
+    /* Peripheral interrupt DeInit*/
+    HAL_NVIC_DisableIRQ(USART3_4_IRQn);
 
   /* USER CODE BEGIN USART3_MspDeInit 1 */
 
