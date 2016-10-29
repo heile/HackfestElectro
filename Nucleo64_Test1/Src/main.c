@@ -68,6 +68,7 @@ SPI_HandleTypeDef hspi2;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim7;
 TIM_HandleTypeDef htim16;
 TIM_HandleTypeDef htim17;
 
@@ -92,6 +93,7 @@ static void MX_ADC_Init(void);
 static void MX_TIM17_Init(void);
 static void MX_TIM16_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_TIM7_Init(void);
 static void MX_NVIC_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
@@ -162,6 +164,16 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 		HAL_UART_Transmit(&huart3, "IR\r\n", 4, 100);
 	}
 }
+
+
+//#ifdef __GNUC__
+//  /* With GCC/RAISONANCE, small printf (option LD Linker->Libraries->Small printf
+//     set to 'Yes') calls __io_putchar() */
+//  #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+//#else
+//  #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+//#endif /* __GNUC__ */
+
 /* USER CODE END 0 */
 
 int main(void)
@@ -191,6 +203,7 @@ int main(void)
   MX_TIM16_Init();
   MX_USB_DEVICE_Init();
   MX_SPI1_Init();
+  MX_TIM7_Init();
 
   /* Initialize interrupts */
   MX_NVIC_Init();
@@ -283,6 +296,8 @@ int main(void)
 
 	systemTimerServiceSetTimer(HF_test_timer, HF_TIMER_MILLISECOND_AUTO_RESET,
 			500);
+
+	printf("Ready\r\n");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -314,6 +329,7 @@ int main(void)
 			uint8_t fifo;
 			HF_USB_Read(&fifo);
 			HF_debugCommandSetBuffer(fifo);
+			HAL_Delay(2);
 			//CDC_Transmit_FS(dataOut, 1);
 //			printf("%c",fifo);
 		}
@@ -404,6 +420,9 @@ static void MX_NVIC_Init(void)
   /* EXTI2_3_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(EXTI2_3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
+  /* TIM7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(TIM7_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(TIM7_IRQn);
 }
 
 /* ADC init function */
@@ -597,6 +616,30 @@ static void MX_TIM3_Init(void)
 
 }
 
+/* TIM7 init function */
+static void MX_TIM7_Init(void)
+{
+
+  TIM_MasterConfigTypeDef sMasterConfig;
+
+  htim7.Instance = TIM7;
+  htim7.Init.Prescaler = 0;
+  htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim7.Init.Period = 0;
+  if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim7, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+}
+
 /* TIM16 init function */
 static void MX_TIM16_Init(void)
 {
@@ -748,7 +791,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pin = IR_OUT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(IR_OUT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin Output Level */
@@ -773,6 +816,25 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+///**
+//  * @brief  Retargets the C library printf function to the USART.
+//  * @param  None
+//  * @retval None
+//  */
+//PUTCHAR_PROTOTYPE
+//{
+//  /* Place your implementation of fputc here */
+//  /* e.g. write a character to the USART */
+////  USART_SendData(EVAL_COM1, (uint8_t) ch);
+//	HAL_UART_Transmit(&huart3, &ch, 1, 100);
+//
+//  /* Loop until the end of transmission */
+////  while (USART_GetFlagStatus(EVAL_COM1, USART_FLAG_TC) == RESET)
+////  {}
+//
+//  return ch;
+//}
 
 /* USER CODE END 4 */
 

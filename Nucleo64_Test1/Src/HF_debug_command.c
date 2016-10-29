@@ -6,8 +6,11 @@
  */
 
 #include "HF_debug_command.h"
-
+#include "stm32f0xx.h"
 void HFsetArg(char * message);
+
+
+extern UART_HandleTypeDef huart3;
 
 void HF_debugCommandSetBuffer(char c) {
 	static uint8_t i = 0;
@@ -68,8 +71,10 @@ void HFdebugCommand(char * command) {
         printf("%s ", HF_argv[index]);
     }
     printf("\r\n");
+    HAL_Delay(2);
 
     if (strcmp(HF_argv[0], "command") == 0) {
-    	printf("Hello\r\n");
+    	printf("Hello %d\r\n",1);
+//    	HAL_UART_Transmit(&huart3, "Hello\r\n", 7, 100);
     }
 }
