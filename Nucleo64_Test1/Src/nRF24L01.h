@@ -160,6 +160,35 @@ typedef union _NRF24L01_IRQ_t {
 	uint8_t Status;          /*!< NRF status register value */
 } NRF24L01_IRQ_t;
 
+
+/**
+ *
+ */
+typedef struct _RF_buffer {
+	union _rx_buffer {
+		uint8_t buffer[32];
+	} rx_buffer;
+	union _rx_state {
+		uint8_t state;
+		struct {
+			uint8_t message_to_process :1;
+			uint8_t ready_to_receive :1;
+		};
+	} rx_state;
+
+	union _tx_buffer {
+		uint8_t buffer[32];
+	} tx_buffer;
+	union _tx_state {
+		uint8_t state;
+		struct {
+			uint8_t message_to_process :1;
+			uint8_t ready_to_send :1;
+		};
+	} tx_state;
+} RF_buffer;
+
+
 /**
  * @brief  Transmission status enumeration
  */
@@ -192,6 +221,8 @@ typedef enum _NRF24L01_OutputPower_t {
  * @}
  */
 
+
+RF_buffer HF_rf_buffer;
 
 
 void SPI_Send(SPI_HandleTypeDef* SPIx, uint8_t data);

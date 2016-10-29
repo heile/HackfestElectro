@@ -1,5 +1,7 @@
 #include "HF_printf.h"
 
+extern UART_HandleTypeDef huart1;
+
 int _fstat(int fd, struct stat *pStat) {
 	pStat->st_mode = S_IFCHR;
 	return 0;
@@ -11,7 +13,7 @@ int _close(int a) {
 
 int _write(int fd, char *pBuffer, int size) {
 	CDC_Transmit_FS(pBuffer, size);
-
+	HAL_UART_Transmit(&huart1, pBuffer, size, 10);//Uart send message "System Start!"
 	return size;
 }
 
@@ -25,9 +27,9 @@ int _lseek(int a, int b, int c) {
 
 int _read(int fd, char *pBuffer, int size) {
 	for (int i = 0; i < size; i++) {
-		while (HFusbRxCount > 0) {
+		while (HF_debug_command_RxCount > 0) {
 		}
-		HF_USB_Read(&pBuffer[i]);
+		HF_debug_command_Read(&pBuffer[i]);
 	}
 	return size;
 }

@@ -51,7 +51,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc.h"
 /* USER CODE BEGIN INCLUDE */
-
+#include "HF_functions.h"
 /* USER CODE END INCLUDE */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -67,20 +67,6 @@
   * @{
   */ 
 /* USER CODE BEGIN EXPORTED_DEFINES */
-
-#define HF_USB_RX_BUFFER_SIZE 32
-
-
-extern uint8_t HFusbRxCount;
-
-
-typedef enum{
-	HF_FUNCTION_RETURN_OK,
-	HF_FUNCTION_RETURN_BUFFER_EMPTY,
-	HF_FUNCTION_RETURN_ERROR
-}HF_FUNCTION_RETURN_STATE;
-
-
 
 /* USER CODE END EXPORTED_DEFINES */
 

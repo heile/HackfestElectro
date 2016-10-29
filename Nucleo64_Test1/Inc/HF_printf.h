@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 
 #include "usbd_cdc_if.h"
+#include "HF_debug_command.h"
 
 int _fstat(int fd, struct stat *pStat);
 

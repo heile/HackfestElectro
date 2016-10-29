@@ -100,15 +100,6 @@ uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
 
-uint8_t HFusbRxHead;
-uint8_t HFusbRxTail;
-uint8_t HFusbRxBuffer[HF_USB_RX_BUFFER_SIZE];
-
-uint8_t HFusbRxCount;
-
-
-
-
 /* USER CODE END PRIVATE_VARIABLES */
 
 /**
@@ -136,21 +127,6 @@ static int8_t CDC_Receive_FS  (uint8_t* pbuf, uint32_t *Len);
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
 
-HF_FUNCTION_RETURN_STATE HF_USB_Read(uint8_t * fifo) {
-
-	if (HFusbRxCount == 0) {
-		return HF_FUNCTION_RETURN_BUFFER_EMPTY;
-	}
-
-	fifo[0] = HFusbRxBuffer[HFusbRxTail++];
-	if (sizeof(HFusbRxBuffer) <= HFusbRxTail) {
-		HFusbRxTail = 0;
-	}
-	HFusbRxCount--;
-
-	return HF_FUNCTION_RETURN_OK;
-}
-
 
 /* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
 
@@ -176,9 +152,6 @@ USBD_CDC_ItfTypeDef USBD_Interface_fops_FS =
 static int8_t CDC_Init_FS(void)
 { 
   /* USER CODE BEGIN 3 */ 
-	HFusbRxHead = 0;
-	HFusbRxTail = 0;
-	HFusbRxCount = 0;
 
   /* Set Application Buffers */
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
@@ -292,18 +265,7 @@ static int8_t CDC_Control_FS  (uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS (uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
-	uint32_t size = 0;
-	while (size < *Len) {
-		HFusbRxBuffer[HFusbRxHead++] = Buf[size];
-		if (sizeof(HFusbRxBuffer) <= HFusbRxHead) {
-			HFusbRxHead = 0;
-		}
-		HFusbRxCount++;
-		size++;
-		if (size>=sizeof(HFusbRxBuffer)){
-			break;
-		}
-	}
+	HF_debug_command_set_rx_buffer(Buf,*Len);
 
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);

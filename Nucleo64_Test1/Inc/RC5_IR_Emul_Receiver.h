@@ -67,10 +67,10 @@ typedef struct
 //#define RC5_EXTI_LINE          EXTI_Line1           /* RC5 EXTI line */
 //#define RC5_EXTI_IRQHandler    EXTI1_IRQHandler     /* RC5 IRQ handler */
 
-//#define RC5_TIM                TIM7                 /* Timer used for RC5 decoding */
-//#define RC5_TIM_CLK            RCC_APB1Periph_TIM7  /* Clock of the used timer */
-//#define RC5_TIM_IRQn           TIM7_IRQn            /* RC5 TIM IRQ */
-//#define RC5_TIM_IRQHandler     TIM7_IRQHandler      /* RC5 TIM IRQ handler */
+#define RC5_TIM                TIM7                 /* Timer used for RC5 decoding */
+#define RC5_TIM_CLK            RCC_APB1ENR_TIM7EN1Periph_TIM7  /* Clock of the used timer */
+#define RC5_TIM_IRQn           TIM7_IRQn            /* RC5 TIM IRQ */
+#define RC5_TIM_IRQHandler     TIM7_IRQHandler      /* RC5 TIM IRQ handler */
 
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */

@@ -195,6 +195,8 @@ typedef struct _NRF24L01_t {
 	NRF24L01_DataRate_t DataRate; //Data rate
 } NRF24L01_t;
 
+
+
 /* Private functions */
 void NRF24L01_InitPins(void);
 void NRF24L01_WriteBit(uint8_t reg, uint8_t bit, uint8_t value);
@@ -207,6 +209,7 @@ uint8_t NRF24L01_RxFifoEmpty(void);
 
 /* NRF structure */
 static NRF24L01_t NRF24L01_Struct;
+
 
 SPI_HandleTypeDef * NRF24L01_SPI;
 
@@ -257,7 +260,8 @@ void SPI_SendMulti(SPI_HandleTypeDef* SPIx, uint8_t* dataOut, uint8_t* dataIn,
 void SPI_WriteMulti(SPI_HandleTypeDef* SPIx, uint8_t* dataOut, uint32_t count) {
 //	switch (HAL_SPI_Transmit(SPIx, dataOut, count, 1000)) {
 //	switch (HAL_SPI_TransmitReceive(SPIx, dataOut, dataOut, count, 100)) {
-	while (SPIx->State != HAL_SPI_STATE_READY) ;
+	while (SPIx->State != HAL_SPI_STATE_READY)
+		;
 	switch (HAL_SPI_Transmit_IT(SPIx, dataOut, count)) {
 	case HAL_OK:
 		break;
@@ -298,9 +302,9 @@ void SPI_ReadMulti(SPI_HandleTypeDef* SPIx, uint8_t *dataIn, uint8_t dummy,
 void NRF24L01_InitPins(void) {
 	/* Init pins */
 	/* CNS pin */
-	//GPIO_Init(NRF24L01_CSN_PORT, NRF24L01_CSN_PIN, GPIO_Mode_OUT, GPIO_OType_PP, GPIO_PuPd_UP, GPIO_Speed_Low);
+//GPIO_Init(NRF24L01_CSN_PORT, NRF24L01_CSN_PIN, GPIO_Mode_OUT, GPIO_OType_PP, GPIO_PuPd_UP, GPIO_Speed_Low);
 	/* CE pin */
-	//GPIO_Init(NRF24L01_CE_PORT, NRF24L01_CE_PIN, GPIO_Mode_OUT, GPIO_OType_PP, GPIO_PuPd_UP, GPIO_Speed_Low);
+//GPIO_Init(NRF24L01_CE_PORT, NRF24L01_CE_PIN, GPIO_Mode_OUT, GPIO_OType_PP, GPIO_PuPd_UP, GPIO_Speed_Low);
 	/* CSN high = disable SPI */
 	NRF24L01_CSN_HIGH;
 
@@ -316,7 +320,7 @@ uint8_t NRF24L01_Init(SPI_HandleTypeDef *hspi, uint8_t channel,
 	NRF24L01_InitPins();
 
 	/* Initialize SPI */
-	//SPI_Init(NRF24L01_SPI, NRF24L01_SPI_PINS);
+//SPI_Init(NRF24L01_SPI, NRF24L01_SPI_PINS);
 	/* Max payload is 32bytes */
 	if (payload_size > 32) {
 		payload_size = 32;
@@ -497,8 +501,8 @@ void NRF24L01_Transmit(uint8_t *data) {
 	/* Fill payload with data*/
 	SPI_WriteMulti(NRF24L01_SPI, data, count);
 
-	while (NRF24L01_SPI->State != HAL_SPI_STATE_READY);
-
+	while (NRF24L01_SPI->State != HAL_SPI_STATE_READY)
+		;
 
 	/* Disable SPI */
 	NRF24L01_CSN_HIGH;
@@ -516,8 +520,8 @@ void NRF24L01_GetData(uint8_t* data) {
 	SPI_ReadMulti(NRF24L01_SPI, data, NRF24L01_NOP_MASK,
 			NRF24L01_Struct.PayloadSize);
 
-	while (NRF24L01_SPI->State != HAL_SPI_STATE_READY);
-
+	while (NRF24L01_SPI->State != HAL_SPI_STATE_READY)
+		;
 
 	/* Pull up chip select */
 	NRF24L01_CSN_HIGH;
@@ -584,7 +588,7 @@ void NRF24L01_SoftwareReset(void) {
 	NRF24L01_REG_DEFAULT_VAL_OBSERVE_TX);
 	NRF24L01_WriteRegister(NRF24L01_REG_RPD, NRF24L01_REG_DEFAULT_VAL_RPD);
 
-	//P0
+//P0
 	data[0] = NRF24L01_REG_DEFAULT_VAL_RX_ADDR_P0_0;
 	data[1] = NRF24L01_REG_DEFAULT_VAL_RX_ADDR_P0_1;
 	data[2] = NRF24L01_REG_DEFAULT_VAL_RX_ADDR_P0_2;
@@ -592,7 +596,7 @@ void NRF24L01_SoftwareReset(void) {
 	data[4] = NRF24L01_REG_DEFAULT_VAL_RX_ADDR_P0_4;
 	NRF24L01_WriteRegisterMulti(NRF24L01_REG_RX_ADDR_P0, data, 5);
 
-	//P1
+//P1
 	data[0] = NRF24L01_REG_DEFAULT_VAL_RX_ADDR_P1_0;
 	data[1] = NRF24L01_REG_DEFAULT_VAL_RX_ADDR_P1_1;
 	data[2] = NRF24L01_REG_DEFAULT_VAL_RX_ADDR_P1_2;
@@ -609,7 +613,7 @@ void NRF24L01_SoftwareReset(void) {
 	NRF24L01_WriteRegister(NRF24L01_REG_RX_ADDR_P5,
 	NRF24L01_REG_DEFAULT_VAL_RX_ADDR_P5);
 
-	//TX
+//TX
 	data[0] = NRF24L01_REG_DEFAULT_VAL_TX_ADDR_0;
 	data[1] = NRF24L01_REG_DEFAULT_VAL_TX_ADDR_1;
 	data[2] = NRF24L01_REG_DEFAULT_VAL_TX_ADDR_2;

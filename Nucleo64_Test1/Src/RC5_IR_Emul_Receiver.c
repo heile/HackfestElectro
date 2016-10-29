@@ -149,7 +149,7 @@
 //}
 //
 ///**
-//  * @brief  Sample the RC5 data bits.
+//  * @brief  Sample the RC5 data bits.	Call by timer to sample data
 //  * @param  None
 //  * @retval None
 //  */
@@ -195,7 +195,7 @@
 //}
 //
 ///**
-//  * @brief  Measure the first low duration of the RC5 frame.
+//  * @brief  Measure the first low duration of the RC5 frame. Call by external interruption of IR receiver output
 //  * @param  None
 //  * @retval None
 //  */
@@ -398,16 +398,23 @@
 //  */
 //static void RC5_GPIO_Configuration(void)
 //{
-//  GPIO_InitTypeDef GPIO_InitStructure;
+////  GPIO_InitTypeDef GPIO_InitStructure;
+////
+////  /* RC5 pin configuration: input floating */
+////  GPIO_InitStructure.GPIO_Pin = RC5_GPIO_PIN;
+////  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+////  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+////  GPIO_Init(RC5_GPIO_PORT, &GPIO_InitStructure);
+////
+////  /* Connect EXTI Line x to RC5 pin */
+////  GPIO_EXTILineConfig(RC5_EXTI_PORT_SOURCE, RC5_EXTI_PIN_SOURCE);
 //
-//  /* RC5 pin configuration: input floating */
-//  GPIO_InitStructure.GPIO_Pin = RC5_GPIO_PIN;
-//  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-//  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-//  GPIO_Init(RC5_GPIO_PORT, &GPIO_InitStructure);
 //
-//  /* Connect EXTI Line x to RC5 pin */
-//  GPIO_EXTILineConfig(RC5_EXTI_PORT_SOURCE, RC5_EXTI_PIN_SOURCE);
+//  /*Configure GPIO pins : Button_Fn1_Pin Button_Fn2_Pin IR_REC_Pin */
+////  GPIO_InitStruct.Pin = IR_REC_Pin;
+////  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+////  GPIO_InitStruct.Pull = GPIO_NOPULL;
+////  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 //}
 //
 ///**
@@ -417,19 +424,24 @@
 //  */
 //static void RC5_NVIC_Configuration(void)
 //{
-//  NVIC_InitTypeDef NVIC_InitStructure;
+////  NVIC_InitTypeDef NVIC_InitStructure;
 //
-//  /* Enable the EXTIx global Interrupt */
-//  NVIC_InitStructure.NVIC_IRQChannel = RC5_EXTI_IRQn;
-//  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-//  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
-//  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-//  NVIC_Init(&NVIC_InitStructure);
+////  /* Enable the EXTIx global Interrupt */
+////  NVIC_InitStructure.NVIC_IRQChannel = RC5_EXTI_IRQn;
+////  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+////  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+////  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+////  NVIC_Init(&NVIC_InitStructure);
+////
+////  /* Enable the RC5_TIM global Interrupt */
+////  NVIC_InitStructure.NVIC_IRQChannel = RC5_TIM_IRQn;
+////  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;
+////  NVIC_Init(&NVIC_InitStructure);
 //
-//  /* Enable the RC5_TIM global Interrupt */
-//  NVIC_InitStructure.NVIC_IRQChannel = RC5_TIM_IRQn;
-//  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;
-//  NVIC_Init(&NVIC_InitStructure);
+//
+////  /* EXTI2_3_IRQn interrupt configuration */
+////  HAL_NVIC_SetPriority(EXTI2_3_IRQn, 0, 0);
+////  HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
 //}
 //
 ///**

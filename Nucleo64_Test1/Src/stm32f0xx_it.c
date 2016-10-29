@@ -43,6 +43,7 @@
 
 extern TIM_HandleTypeDef htim2;
 
+
 NRF24L01_Transmit_Status_t transmissionStatus;
 NRF24L01_IRQ_t NRF_IRQ;
 /* Data received and data for send */
@@ -170,11 +171,11 @@ void EXTI4_15_IRQHandler(void)
 	// If data is ready on NRF24L01+
 	if (NRF_IRQ.F.DataReady) {
 		//Get data from NRF24L01+
-		memset(dataIn, 0x00, 32);
-		NRF24L01_GetData(dataIn);
+		memset(HF_rf_buffer.rx_buffer.buffer, 0x00, 32);
+		NRF24L01_GetData(HF_rf_buffer.rx_buffer.buffer);
+		HF_rf_buffer.rx_state.message_to_process=1;
 		// Send it back, NRF goes automatically to TX mode
 //		NRF24L01_Transmit(dataIn);
-		CDC_Transmit_FS(dataIn, strlen(dataIn));
 	}
 
   /* USER CODE END EXTI4_15_IRQn 0 */
