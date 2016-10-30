@@ -42,6 +42,7 @@
 #include "HF_timer_service.h"
 
 extern TIM_HandleTypeDef htim2;
+extern HF_SYSTEM_TIMER hd_system_timer;
 
 
 NRF24L01_Transmit_Status_t transmissionStatus;

@@ -12,12 +12,13 @@
 #include <string.h>
 #include "HF_functions.h"
 
+typedef struct HF_CMD {
+	char argv[4][15];
+	uint8_t argc;
+} HF_CMD;
 
-char HF_argv[5][15];
-char HF_argc;
 
-
-char HF_shell_command_buffer[3][50];
+char HF_shell_command_buffer[3][60];
 
 #define HF_USB_VCP_RX_BUFFER_SIZE 32
 extern uint8_t HF_usb_vcp_RxCount;
@@ -36,6 +37,7 @@ typedef enum {
 	SHELL_CONSOLE_TYPE_ALL,
 }SHELL_COMMAND_CONSOLE_TYPE;
 
+void HFParseArg(char* message, HF_CMD* cmd);
 
 void HF_debugCommandSetBuffer(char c);
 

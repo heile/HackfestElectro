@@ -32,34 +32,34 @@ uint8_t HF_hacker_uart_port_RxCount = 0;
 
 /****************End buffer declaration*******/
 
-void HFsetArg(char * message);
 
 extern UART_HandleTypeDef huart3;
 extern UART_HandleTypeDef huart1;
 
 void HFdebugCommand(char * command) {
 	int index = 0;
+	HF_CMD cmd;
 
 	//                    printf("\n\rDebug Command message: %s\n\r\n\r", debug_command_buffer);
 
-	HFsetArg(command);
+	HFParseArg(command, &cmd);
 
 	printf("\r\nDebug Command:  ");
-	for (index = 0; index < HF_argc; index++) {
-		printf("%s ", HF_argv[index]);
+	for (index = 0; index < cmd.argc; index++) {
+		printf("%s ", cmd.argv[index]);
 	}
 	printf("\r\n");
 	HAL_Delay(2);
 
-	if (strcmp(HF_argv[0], "command") == 0) {
+	if (strcmp(cmd.argv[0], "command") == 0) {
 		printf("Hello %d\r\n", 1);
 //    	HAL_UART_Transmit(&huart3, "Hello\r\n", 7, 100);
-	} else if (strcmp(HF_argv[0], "rf") == 0) {
-		if (strcmp(HF_argv[1], "say") == 0) {
+	} else if (strcmp(cmd.argv[0], "rf") == 0) {
+		if (strcmp(cmd.argv[1], "say") == 0) {
 			HAL_GPIO_TogglePin(GPIOC, TEST_OUT_PIN_Pin);
-			NRF24L01_Transmit(HF_argv[2]); //WiFi send "System Start!" to host
+			NRF24L01_Transmit(cmd.argv[2]); //WiFi send "System Start!" to host
 			HAL_GPIO_TogglePin(GPIOC, TEST_OUT_PIN_Pin);
-			printf("RF Send: %s\r\n", HF_argv[2]);
+			printf("RF Send: %s\r\n", cmd.argv[2]);
 		}
 
 //    	HAL_UART_Transmit(&huart3, "Hello\r\n", 7, 100);
@@ -89,6 +89,7 @@ void HF_ShellCommandSetBuffer(char c, SHELL_COMMAND_CONSOLE_TYPE buffer_type) {
 		if (c == '\r') {
 			HFShellCommand(HF_shell_command_buffer[SHELL_CONSOLE_TYPE_USB_VCP]);
 			index_usb_buffer = 0;
+			memset(HF_shell_command_buffer[SHELL_CONSOLE_TYPE_USB_VCP], 0x00, 50);
 		}
 		break;
 	case SHELL_CONSOLE_TYPE_RS232:
@@ -108,6 +109,7 @@ void HF_ShellCommandSetBuffer(char c, SHELL_COMMAND_CONSOLE_TYPE buffer_type) {
 		if (c == '\r') {
 			HFShellCommand(HF_shell_command_buffer[SHELL_CONSOLE_TYPE_RS232]);
 			index_rs232_buffer = 0;
+			memset(HF_shell_command_buffer[SHELL_CONSOLE_TYPE_RS232], 0x00, 50);
 		}
 		break;
 	case SHELL_CONSOLE_TYPE_HACKER_UART_PORT:
@@ -128,32 +130,35 @@ void HF_ShellCommandSetBuffer(char c, SHELL_COMMAND_CONSOLE_TYPE buffer_type) {
 		if (c == '\r') {
 			HFShellCommand(HF_shell_command_buffer[SHELL_CONSOLE_TYPE_HACKER_UART_PORT]);
 			index_hacker_usart_port_buffer = 0;
+			memset(HF_shell_command_buffer[SHELL_CONSOLE_TYPE_HACKER_UART_PORT], 0x00, 50);
+
 		}
 		break;
 	}
 }
 
-void HFsetArg(char * message) {
+void HFParseArg(char* message, HF_CMD* cmd) {
 	int i = 0;
-	HF_argc = 0;
-	memset(HF_argv[HF_argc], 0x00, 15);
+	cmd->argc = 0;
+	memset(cmd->argv[cmd->argc], 0x00, 15);
 	while ((*message != '\n') && (*message != '\r') && (*message != '\0')) {
 		if (*message != ' ') {
-			HF_argv[HF_argc][i++] = *message;
+			cmd->argv[cmd->argc][i++] = *message;
 			message++;
 		} else if ((*(message + 1) > ' ') && (*(message + 1) <= '~')) {
-			HF_argc++;
-			memset(HF_argv[HF_argc], 0x00, 15);
+			cmd->argc++;
+			memset(cmd->argv[cmd->argc], 0x00, 15);
 			i = 0;
 			message++;
 		} else {
 			message++;
 		}
-		if ((HF_argc > 4) || i > 15) {
+		if ((cmd->argc > 4) || i > 15) {
 			return;
 		}
 	}
-	HF_argc++;
+	cmd->argc++;
+
 
 }
 

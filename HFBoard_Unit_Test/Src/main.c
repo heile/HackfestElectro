@@ -54,6 +54,7 @@
 #include "HF_printf.h"
 #include "HF_I2C_Software.h"
 #include "HF_debug_command.h"
+#include "HF_Leds.h"
 
 /* USER CODE END Includes */
 
@@ -117,7 +118,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	exti_callback(GPIO_Pin);
 }
 
+//rhythme
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	/*
 	static char sens = 0;
 	static uint32_t value = 0;
 	if (sens == 0) {
@@ -134,6 +137,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		}
 	}
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, value);
+	*/
 }
 
 /* USER CODE END 0 */
@@ -196,8 +200,8 @@ int main(void)
 
 	CDC_Transmit_FS(dataOut, strlen(dataOut));//USB(Virtual Com Port) send "System Start!" to PC
 
-	HAL_UART_Transmit(&huart3, dataOut, strlen(dataOut), 100);//Uart send message "System Start!"
-	HAL_UART_Receive_IT(&huart3, dataOut, 1);
+	//HAL_UART_Transmit(&huart3, dataOut, strlen(dataOut), 100);//Uart send message "System Start!"
+	//HAL_UART_Receive_IT(&huart3, dataOut, 1);
 
 	//test_eeprom();
 	//test_ram(&hspi1);
@@ -205,13 +209,18 @@ int main(void)
 
 	systemTimerServiceSetTimer(HF_test_timer, HF_TIMER_MILLISECOND_AUTO_RESET, 500);
 
-	printf("Ready\r\n");
+    hf_print("hfboard>");
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
 		if (systemTimerServiceCheckEnd(HF_test_timer) == 0) {
+			//run_led_infinity();
+			test_all_leds();
+			//hf_print("test\r\n");
+
+			/*
 			static char sens = 0;
 			if (sens == 0) {
 				if (htim17.Init.Period < 50000) {
@@ -229,7 +238,8 @@ int main(void)
 			if (HAL_TIM_Base_Init(&htim17) != HAL_OK) {
 				Error_Handler();
 			}
-			HAL_GPIO_TogglePin(GPIOB, IR_OUT_Pin);
+			*/
+			//HAL_GPIO_TogglePin(GPIOB, IR_OUT_Pin);
 			//printf("Hello \n\r");
 		}
 
