@@ -147,23 +147,23 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	if (htim == &htim16) {
-		static char sens = 0;
-		static uint32_t value = 0;
-		if (sens == 0) {
-			if (value < 1000) {
-				value++;
-			} else {
-				sens = 1;
-			}
-		} else {
-			if (value > 0) {
-				value--;
-			} else {
-				sens = 0;
-			}
-		}
-		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, value);
+	if (htim == &htim17) {
+//		static char sens = 0;
+//		static uint32_t value = 0;
+//		if (sens == 0) {
+//			if (value < 1000) {
+//				value++;
+//			} else {
+//				sens = 1;
+//			}
+//		} else {
+//			if (value > 0) {
+//				value--;
+//			} else {
+//				sens = 0;
+//			}
+//		}
+//		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, value);
 	}else if (htim == &htim7){
 		counter_ir++;
 	}
@@ -298,9 +298,9 @@ int main(void)
 	NRF24L01_SetMyAddress(MyAddress);
 	NRF24L01_SetTxAddress(TxAddress);
 
-	HAL_GPIO_TogglePin(GPIOC, TEST_OUT_PIN_Pin);
+	HAL_GPIO_WritePin(GPIOC, TEST_OUT_PIN_Pin,RESET);
 	NRF24L01_Transmit(dataOut);				//WiFi send "System Start!" to host
-	HAL_GPIO_TogglePin(GPIOC, TEST_OUT_PIN_Pin);
+	HAL_GPIO_WritePin(GPIOC, TEST_OUT_PIN_Pin,SET);
 
 	CDC_Transmit_FS(dataOut, strlen(dataOut));//USB(Virtual Com Port) send "System Start!" to PC
 
@@ -361,7 +361,7 @@ int main(void)
 //	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_SET);
 
 	systemTimerServiceSetTimer(HF_test_timer, HF_TIMER_MILLISECOND_AUTO_RESET,
-			500);
+			50);
 
 	printf("Ready\r\n");
 
@@ -372,23 +372,25 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	while (1) {
 		if (systemTimerServiceCheckEnd(HF_test_timer) == 0) {
-			static char sens = 0;
-			if (sens == 0) {
-				if (htim17.Init.Period < 50000) {
-					htim17.Init.Period += 1000;
-				} else {
-					sens = 1;
-				}
-			} else {
-				if (htim17.Init.Period > 5000) {
-					htim17.Init.Period -= 1000;
-				} else {
-					sens = 0;
-				}
-			}
-			if (HAL_TIM_Base_Init(&htim17) != HAL_OK) {
-				Error_Handler();
-			}
+//			static char sens = 0;
+//			if (sens == 0) {
+//				if (htim17.Init.Period < 50000) {
+//					htim17.Init.Period += 1000;
+//				} else {
+//					sens = 1;
+//				}
+//			} else {
+//				if (htim17.Init.Period > 5000) {
+//					htim17.Init.Period -= 1000;
+//				} else {
+//					sens = 0;
+//				}
+//			}
+//			if (HAL_TIM_Base_Init(&htim17) != HAL_OK) {
+//				Error_Handler();
+//			}
+
+			run_led_infinity();
 //			HAL_GPIO_TogglePin(GPIOB, IR_OUT_Pin);
 //			printf("Hello \n\r");
 		}
@@ -624,7 +626,7 @@ static void MX_TIM2_Init(void)
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 300;
+  sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
@@ -632,19 +634,19 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
 
-  sConfigOC.Pulse = 500;
+  sConfigOC.Pulse = 0;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
   }
 
-  sConfigOC.Pulse = 100;
+  sConfigOC.Pulse = 0;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
   {
     Error_Handler();
   }
 
-  sConfigOC.Pulse = 800;
+  sConfigOC.Pulse = 0;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
   {
     Error_Handler();
@@ -679,7 +681,7 @@ static void MX_TIM3_Init(void)
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 300;
+  sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
@@ -692,7 +694,7 @@ static void MX_TIM3_Init(void)
     Error_Handler();
   }
 
-  sConfigOC.Pulse = 30;
+  sConfigOC.Pulse = 0;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
   {
     Error_Handler();

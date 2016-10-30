@@ -56,9 +56,9 @@ void HFdebugCommand(char * command) {
 //    	HAL_UART_Transmit(&huart3, "Hello\r\n", 7, 100);
 	} else if (strcmp(HF_argv[0], "rf") == 0) {
 		if (strcmp(HF_argv[1], "say") == 0) {
-			HAL_GPIO_TogglePin(GPIOC, TEST_OUT_PIN_Pin);
+			HAL_GPIO_WritePin(GPIOC, TEST_OUT_PIN_Pin,RESET);
 			NRF24L01_Transmit(HF_argv[2]); //WiFi send "System Start!" to host
-			HAL_GPIO_TogglePin(GPIOC, TEST_OUT_PIN_Pin);
+			HAL_GPIO_WritePin(GPIOC, TEST_OUT_PIN_Pin,SET);
 			printf("RF Send: %s\r\n", HF_argv[2]);
 		}
 

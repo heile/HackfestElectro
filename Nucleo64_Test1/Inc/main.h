@@ -59,6 +59,14 @@
 #define Button_Fn2_GPIO_Port GPIOC
 #define IR_REC_Pin GPIO_PIN_2
 #define IR_REC_GPIO_Port GPIOC
+#define LED1_Pin GPIO_PIN_0
+#define LED1_GPIO_Port GPIOA
+#define LED2_Pin GPIO_PIN_1
+#define LED2_GPIO_Port GPIOA
+#define LED3_Pin GPIO_PIN_2
+#define LED3_GPIO_Port GPIOA
+#define LED4_Pin GPIO_PIN_3
+#define LED4_GPIO_Port GPIOA
 #define PA4_Pin GPIO_PIN_4
 #define PA4_GPIO_Port GPIOA
 #define SPI1_SCK_RAM_Pin GPIO_PIN_5
