@@ -52,6 +52,7 @@
 #include "usbd_cdc.h"
 /* USER CODE BEGIN INCLUDE */
 #include "HF_functions.h"
+#include "HF_debug_command.h"
 /* USER CODE END INCLUDE */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY

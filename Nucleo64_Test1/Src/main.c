@@ -106,7 +106,8 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 /* Private function prototypes -----------------------------------------------*/
 
 char dataOut[32];
-char fifo_debug;
+char rx_fifo_hacker_uart_port;
+char rx_fifo_rs232;
 uint32_t len;
 uint8_t counter_ir;
 
@@ -136,11 +137,12 @@ void run_seven_led() {
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	if (huart == &huart3) {
-		HAL_UART_Transmit(&huart3, dataOut, 1, 10);	//Replay Message received
-		HAL_UART_Receive_IT(&huart3, dataOut, 1);
+//		HAL_UART_Transmit(&huart3, dataOut, 1, 10);	//Replay Message received
+		HF_shell_command_set_rx_buffer(&rx_fifo_rs232, 1,SHELL_CONSOLE_TYPE_RS232);
+		HAL_UART_Receive_IT(&huart3, &rx_fifo_rs232, 1);
 	} else if (huart == &huart1) {
-		HF_debug_command_set_rx_buffer(&fifo_debug, 1);
-		HAL_UART_Receive_IT(&huart1, &fifo_debug, 1);
+		HF_shell_command_set_rx_buffer(&rx_fifo_hacker_uart_port, 1,SHELL_CONSOLE_TYPE_HACKER_UART_PORT);
+		HAL_UART_Receive_IT(&huart1, &rx_fifo_hacker_uart_port, 1);
 	}
 }
 
@@ -305,12 +307,12 @@ int main(void)
 	/////////////////UART 3 /////////////////////////////
 	HAL_UART_Transmit(&huart3, dataOut, strlen(dataOut), 100);//Uart send message "System Start!"
 
-	HAL_UART_Receive_IT(&huart3, dataOut, 1);
+	HAL_UART_Receive_IT(&huart3, &rx_fifo_rs232, 1);
 
 	//////////////////UART 1 //////////////////////////
 	HAL_UART_Transmit(&huart1, dataOut, strlen(dataOut), 100);//Uart send message "System Start!"
 
-	HAL_UART_Receive_IT(&huart1, &fifo_debug, 1);
+	HAL_UART_Receive_IT(&huart1, &rx_fifo_hacker_uart_port, 1);
 
 	/***************Test EEPROM ****************************/
 	i2cWrite(0xA0, 0x00, 0x55);
@@ -320,48 +322,50 @@ int main(void)
 	i2cRead(0xA0, 0x00, 20, dataOut);
 
 	/***************Test RAM***********************************/
-	dataOut[0] = 0x05;	//Read status register
-	dataOut[1] = 0x00;
-	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(&hspi1, dataOut, dataOut, 2, 100);
-	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_SET);
-	HAL_Delay(2);
-	dataOut[0] = 0x01;	//Write status register
-	dataOut[1] = 0x41;	//Set Sequential mode
-	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(&hspi1, dataOut, dataOut, 2, 100);
-	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_SET);
-	HAL_Delay(2);
-	dataOut[0] = 0x02;	//Write Instruction
-	dataOut[1] = 0x00;
-	dataOut[2] = 0x00;
-	dataOut[3] = 0x02;
-	dataOut[4] = 0x03;
-	dataOut[5] = 0x04;
-	dataOut[6] = 0x05;
-	dataOut[7] = 0x06;
-	dataOut[8] = 0x07;
-	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(&hspi1, dataOut, dataOut, 10, 100);
-	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_SET);
-	HAL_Delay(50);
-	dataOut[0] = 0x03;	//Read Instruction
-	dataOut[1] = 0x00;
-	dataOut[2] = 0x00;
-	dataOut[3] = 0x00;
-	dataOut[4] = 0x00;
-	dataOut[5] = 0x00;
-	dataOut[6] = 0x00;
-	dataOut[7] = 0x00;
-	dataOut[8] = 0x00;
-	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(&hspi1, dataOut, dataOut, 15, 100);
-	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_SET);
+//	dataOut[0] = 0x05;	//Read status register
+//	dataOut[1] = 0x00;
+//	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_RESET);
+//	HAL_SPI_TransmitReceive(&hspi1, dataOut, dataOut, 2, 100);
+//	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_SET);
+//	HAL_Delay(2);
+//	dataOut[0] = 0x01;	//Write status register
+//	dataOut[1] = 0x41;	//Set Sequential mode
+//	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_RESET);
+//	HAL_SPI_TransmitReceive(&hspi1, dataOut, dataOut, 2, 100);
+//	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_SET);
+//	HAL_Delay(2);
+//	dataOut[0] = 0x02;	//Write Instruction
+//	dataOut[1] = 0x00;
+//	dataOut[2] = 0x00;
+//	dataOut[3] = 0x02;
+//	dataOut[4] = 0x03;
+//	dataOut[5] = 0x04;
+//	dataOut[6] = 0x05;
+//	dataOut[7] = 0x06;
+//	dataOut[8] = 0x07;
+//	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_RESET);
+//	HAL_SPI_TransmitReceive(&hspi1, dataOut, dataOut, 10, 100);
+//	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_SET);
+//	HAL_Delay(50);
+//	dataOut[0] = 0x03;	//Read Instruction
+//	dataOut[1] = 0x00;
+//	dataOut[2] = 0x00;
+//	dataOut[3] = 0x00;
+//	dataOut[4] = 0x00;
+//	dataOut[5] = 0x00;
+//	dataOut[6] = 0x00;
+//	dataOut[7] = 0x00;
+//	dataOut[8] = 0x00;
+//	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_RESET);
+//	HAL_SPI_TransmitReceive(&hspi1, dataOut, dataOut, 15, 100);
+//	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_SET);
 
 	systemTimerServiceSetTimer(HF_test_timer, HF_TIMER_MILLISECOND_AUTO_RESET,
 			500);
 
 	printf("Ready\r\n");
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -397,10 +401,18 @@ int main(void)
 //			//CDC_Transmit_FS(dataOut, 1);
 ////			printf("%c",fifo);
 //		}
-		if (HF_debug_command_RxCount > 0) {
+		if (HF_usb_vcp_RxCount > 0) {
 			uint8_t fifo;
-			HF_debug_command_Read(&fifo);
-			HF_debugCommandSetBuffer(fifo);
+			HF_shell_command_Read(&fifo,SHELL_CONSOLE_TYPE_USB_VCP);
+			HF_ShellCommandSetBuffer(fifo,SHELL_CONSOLE_TYPE_USB_VCP);
+		}else if (HF_rs232_RxCount > 0) {
+			uint8_t fifo;
+			HF_shell_command_Read(&fifo,SHELL_CONSOLE_TYPE_RS232);
+			HF_ShellCommandSetBuffer(fifo,SHELL_CONSOLE_TYPE_RS232);
+		}else if (HF_hacker_uart_port_RxCount > 0) {
+			uint8_t fifo;
+			HF_shell_command_Read(&fifo,SHELL_CONSOLE_TYPE_HACKER_UART_PORT);
+			HF_ShellCommandSetBuffer(fifo,SHELL_CONSOLE_TYPE_HACKER_UART_PORT);
 		}
 
 		if (HF_rf_buffer.rx_state.message_to_process == 1) {

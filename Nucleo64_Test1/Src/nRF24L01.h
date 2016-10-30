@@ -167,6 +167,10 @@ typedef union _NRF24L01_IRQ_t {
 typedef struct _RF_buffer {
 	union _rx_buffer {
 		uint8_t buffer[32];
+		struct{
+			uint8_t header:8;
+			uint8_t address:8;
+		};
 	} rx_buffer;
 	union _rx_state {
 		uint8_t state;
