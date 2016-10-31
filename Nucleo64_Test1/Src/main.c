@@ -60,6 +60,8 @@
 
 #include "HF_debug_command.h"
 
+#include "HF_IR_Receiver.h"
+
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -70,6 +72,7 @@ SPI_HandleTypeDef hspi2;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim7;
 TIM_HandleTypeDef htim16;
 TIM_HandleTypeDef htim17;
@@ -96,6 +99,7 @@ static void MX_TIM17_Init(void);
 static void MX_TIM16_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM7_Init(void);
+static void MX_TIM6_Init(void);
 static void MX_NVIC_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
@@ -165,7 +169,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		}
 //		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, value);
 	}else if (htim == &htim7){
-		counter_ir++;
+//		counter_ir++;
+		hf_ir_reciever.timer_tick++;
+	}else if (htim == &htim6){
+		HAL_GPIO_TogglePin(GPIOB, IR_OUT_Pin);
 	}
 }
 
@@ -175,56 +182,64 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == GPIO_PIN_0) {
 		printf("Counter: %d\r\n",counter);
 		counter=0;
+		HAL_TIM_Base_Stop_IT(&htim6);
 		HAL_UART_Transmit(&huart3, "Botton Fn1\r\n", 12, 100);
 	} else if (GPIO_Pin == GPIO_PIN_1) {
-		uint8_t i=0;
-		uint32_t value=0;
-		printf("Time Value:\r\n");
-		for(i=0;i<counter;i++){
-			if (i==1){
-				if (timer_value[i-1]-177<6 && timer_value[i-1]-87<6)		//NEC Code
-				printf("NEC Code: ");
-			}else if ((i%2)==1){
-				static int8_t position=31;
-				if (position>=0){
-					if ((timer_value[i]-timer_value[i-1])>6){
-						value |= (1<<position);
-						printf("1 ");
-					}else{
-						printf("0 ");
-					}
-				position--;
-				}
-			}
+//		uint8_t i=0;
+//		uint32_t value=0;
+//		printf("Time Value:\r\n");
+//		for(i=0;i<counter;i++){
 //			if (i==1){
-//
-//			}else if (i==17){
-//				printf("    ");
-//			}else if (i==33){
-//				printf("\r\n");
-//			}else if (i==49){
-//				printf("    ");
+//				if (timer_value[i-1]-177<6 && timer_value[i-1]-87<6)		//NEC Code
+//				printf("NEC Code: ");
+//			}else if ((i%2)==1){
+//				static int8_t position=31;
+//				if (position>=0){
+//					if ((timer_value[i]-timer_value[i-1])>6){
+//						value |= (1<<position);
+//						printf("1 ");
+//					}else{
+//						printf("0 ");
+//					}
+//				position--;
+//				}
 //			}
-		}
-		printf("\r\n%#X\r\n",value);
-		HAL_UART_Transmit(&huart3, "Botton Fn2\r\n", 12, 100);
+////			if (i==1){
+////
+////			}else if (i==17){
+////				printf("    ");
+////			}else if (i==33){
+////				printf("\r\n");
+////			}else if (i==49){
+////				printf("    ");
+////			}
+//		}
+		HAL_TIM_Base_Start_IT(&htim6);
+		printf("\r\n%#X\r\n",hf_ir_reciever.data);
+//		HAL_UART_Transmit(&huart3, "Botton Fn2\r\n", 12, 100);
 	} else if (GPIO_Pin == GPIO_PIN_2) {
-		if (counter==0){
-			counter_ir=0;
-			HAL_GPIO_TogglePin(GPIOB, IR_OUT_Pin);
-		}else if ((counter % 2) == 0) {
-			if(counter<80)
-				timer_value[counter-1] = counter_ir;
-			counter_ir=0;
-			HAL_GPIO_TogglePin(GPIOB, IR_OUT_Pin);
-		}else {
-			if(counter<80)
-				timer_value[counter-1] = counter_ir;
-			HAL_GPIO_TogglePin(GPIOB, IR_OUT_Pin);
-			counter_ir=0;
+//		if (counter==0){
+//			counter_ir=0;
+//			HAL_GPIO_TogglePin(GPIOB, IR_OUT_Pin);
+//		}else if ((counter % 2) == 0) {
+//			if(counter<80)
+//				timer_value[counter-1] = counter_ir;
+//			counter_ir=0;
+//			HAL_GPIO_TogglePin(GPIOB, IR_OUT_Pin);
+//		}else {
+//			if(counter<80)
+//				timer_value[counter-1] = counter_ir;
+//			HAL_GPIO_TogglePin(GPIOB, IR_OUT_Pin);
+//			counter_ir=0;
+//		}
+////		HAL_UART_Transmit(&huart3, "IR\r\n", 4, 100);
+//		counter++;
+		if (HAL_GPIO_ReadPin(IR_REC_GPIO_Port,IR_REC_Pin)==RESET){
+			HfIrReceiverEdgeInterruption(HF_INTERRUPTION_EDGE_FALLING);
+		}else{
+			HfIrReceiverEdgeInterruption(HF_INTERRUPTION_EDGE_RSING);
 		}
-//		HAL_UART_Transmit(&huart3, "IR\r\n", 4, 100);
-		counter++;
+
 	}
 }
 
@@ -266,6 +281,7 @@ int main(void)
   MX_USB_DEVICE_Init();
   MX_SPI1_Init();
   MX_TIM7_Init();
+  MX_TIM6_Init();
 
   /* Initialize interrupts */
   MX_NVIC_Init();
@@ -290,6 +306,7 @@ int main(void)
 	HAL_TIM_Base_Start_IT(&htim16);
 
 	HAL_TIM_Base_Start_IT(&htim7);
+	HAL_TIM_Base_Start_IT(&htim6);
 
 	strcpy(dataOut, "System Start!\n\r");	//Message to print and send
 
@@ -626,7 +643,7 @@ static void MX_TIM2_Init(void)
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 300;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
@@ -634,19 +651,19 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
 
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 500;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
   }
 
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 100;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
   {
     Error_Handler();
   }
 
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 800;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
   {
     Error_Handler();
@@ -681,7 +698,7 @@ static void MX_TIM3_Init(void)
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 300;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
@@ -694,13 +711,37 @@ static void MX_TIM3_Init(void)
     Error_Handler();
   }
 
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 30;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
   {
     Error_Handler();
   }
 
   HAL_TIM_MspPostInit(&htim3);
+
+}
+
+/* TIM6 init function */
+static void MX_TIM6_Init(void)
+{
+
+  TIM_MasterConfigTypeDef sMasterConfig;
+
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 0;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 632;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
 }
 
