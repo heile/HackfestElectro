@@ -393,12 +393,8 @@ int main(void)
 
 	/***************************test IR Transmitter******************/
 	if (hf_ir_transmitter.state == HF_IR_TRANSMITTER_STATE_READY){
-		hf_ir_transmitter.nec_code.address=0x00;
-		hf_ir_transmitter.nec_code.address_inverse=0xFF;
-		hf_ir_transmitter.nec_code.command=0x2A;
-		hf_ir_transmitter.nec_code.command_inverse=0xD5;
-		hf_ir_transmitter.type_code = HF_IR_TRANSMITTER_CODE_TYPE_NEC;
-		hf_ir_transmitter.state = HF_IR_TRANSMITTER_STATE_SET_HEADER;
+		HfIrTransmitterSetData(0x00,0x2A,HF_IR_TRANSMITTER_CODE_TYPE_NEC);
+		hf_ir_transmitter.state = HF_IR_TRANSMITTER_STATE_SNED;
 	}
 
 
@@ -470,6 +466,7 @@ int main(void)
 		if (hf_ir_reciever.state ==  HF_IR_RECEIVER_STATE_DATA_READY){
 			hf_ir_reciever.state =  HF_IR_RECEIVER_STATE_DATA_READ;
 			printf("\r\n%#X\r\n",hf_ir_reciever.data);
+			printf("Address %#X, Command %#X\r\n",hf_ir_reciever.address,hf_ir_reciever.command);
 		}
 
   /* USER CODE END WHILE */

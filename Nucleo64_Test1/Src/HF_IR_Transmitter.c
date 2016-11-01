@@ -13,7 +13,7 @@ void HfIrTransmitterSendCode(){
 	switch (hf_ir_transmitter.state){
 	case HF_IR_TRANSMITTER_STATE_READY:
 		break;
-	case HF_IR_TRANSMITTER_STATE_SET_HEADER:
+	case HF_IR_TRANSMITTER_STATE_SNED:
 		HAL_TIM_Base_Start_IT(&htim6);
 		if (hf_ir_transmitter.type_code==HF_IR_TRANSMITTER_CODE_TYPE_NEC){
 			hf_ir_transmitter.pulse_during = HF_IR_TRANSMITTER_NEC_CODE_HEADER_PULSE;
@@ -85,5 +85,17 @@ void HfIrTransmitterSendCode(){
 	case HF_IR_TRANSMITTER_STATE_SEND_DATA_FINISH:
 		hf_ir_transmitter.state = HF_IR_TRANSMITTER_STATE_READY;
 		break;
+	}
+}
+
+
+void HfIrTransmitterSetData(uint8_t address, uint8_t command, HF_IR_TRANSMITTER_CODE_TYPE type_code){
+	switch (type_code){
+	case HF_IR_TRANSMITTER_CODE_TYPE_NEC:
+		hf_ir_transmitter.nec_code.address = address;
+		hf_ir_transmitter.nec_code.address_inverse = ~address;
+		hf_ir_transmitter.nec_code.command = command;
+		hf_ir_transmitter.nec_code.command_inverse = ~command;
+		hf_ir_transmitter.type_code = type_code;
 	}
 }
