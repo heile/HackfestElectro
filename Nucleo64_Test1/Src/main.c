@@ -61,6 +61,7 @@
 #include "HF_debug_command.h"
 
 #include "HF_IR_Receiver.h"
+#include "HF_IR_Transmitter.h"
 
 /* USER CODE END Includes */
 
@@ -171,8 +172,20 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	}else if (htim == &htim7){
 //		counter_ir++;
 		hf_ir_reciever.timer_tick++;
+		HfIrTransmitterSendCode();
+
+
 	}else if (htim == &htim6){
-		HAL_GPIO_TogglePin(GPIOB, IR_OUT_Pin);
+		if (hf_ir_transmitter.state!=HF_IR_TRANSMITTER_STATE_READY){
+			if (hf_ir_transmitter.bit_state==HF_IR_TRANSMITTER_BIT_STATE_PULSE){
+				HAL_GPIO_TogglePin(GPIOB, IR_OUT_Pin);
+				HAL_GPIO_WritePin(Test_GPIO_Port, Test_Pin,SET);
+			}
+			else{
+				HAL_GPIO_WritePin(GPIOB, IR_OUT_Pin,RESET);
+				HAL_GPIO_WritePin(Test_GPIO_Port, Test_Pin,RESET);
+			}
+		}
 	}
 }
 
@@ -182,7 +195,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == GPIO_PIN_0) {
 		printf("Counter: %d\r\n",counter);
 		counter=0;
-		HAL_TIM_Base_Stop_IT(&htim6);
+
 		HAL_UART_Transmit(&huart3, "Botton Fn1\r\n", 12, 100);
 	} else if (GPIO_Pin == GPIO_PIN_1) {
 //		uint8_t i=0;
@@ -214,8 +227,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 ////				printf("    ");
 ////			}
 //		}
-		HAL_TIM_Base_Start_IT(&htim6);
-		printf("\r\n%#X\r\n",hf_ir_reciever.data);
+
+
 //		HAL_UART_Transmit(&huart3, "Botton Fn2\r\n", 12, 100);
 	} else if (GPIO_Pin == GPIO_PIN_2) {
 //		if (counter==0){
@@ -377,6 +390,18 @@ int main(void)
 //	HAL_SPI_TransmitReceive(&hspi1, dataOut, dataOut, 15, 100);
 //	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_SET);
 
+
+	/***************************test IR Transmitter******************/
+	if (hf_ir_transmitter.state == HF_IR_TRANSMITTER_STATE_READY){
+		hf_ir_transmitter.nec_code.address=0x00;
+		hf_ir_transmitter.nec_code.address_inverse=0xFF;
+		hf_ir_transmitter.nec_code.command=0x2A;
+		hf_ir_transmitter.nec_code.command_inverse=0xD5;
+		hf_ir_transmitter.type_code = HF_IR_TRANSMITTER_CODE_TYPE_NEC;
+		hf_ir_transmitter.state = HF_IR_TRANSMITTER_STATE_SET_HEADER;
+	}
+
+
 	systemTimerServiceSetTimer(HF_test_timer, HF_TIMER_MILLISECOND_AUTO_RESET,
 			50);
 
@@ -440,6 +465,11 @@ int main(void)
 //			HAL_GPIO_TogglePin(GPIOC, TEST_OUT_PIN_Pin);
 //			NRF24L01_Transmit(HF_rf_buffer.rx_buffer.buffer);		//WiFi send "System Start!" to host
 //			HAL_GPIO_TogglePin(GPIOC, TEST_OUT_PIN_Pin);
+		}
+
+		if (hf_ir_reciever.state ==  HF_IR_RECEIVER_STATE_DATA_READY){
+			hf_ir_reciever.state =  HF_IR_RECEIVER_STATE_DATA_READ;
+			printf("\r\n%#X\r\n",hf_ir_reciever.data);
 		}
 
   /* USER CODE END WHILE */
@@ -754,7 +784,7 @@ static void MX_TIM7_Init(void)
   htim7.Instance = TIM7;
   htim7.Init.Prescaler = 0;
   htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim7.Init.Period = 2400;
+  htim7.Init.Period = 2700;
   if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
   {
     Error_Handler();
@@ -915,6 +945,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(SPI1_CS_RAM_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : Test_Pin */
+  GPIO_InitStruct.Pin = Test_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(Test_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pins : I2C1_SDA_EEPROM_Pin I2C1_SCL_EEPROM_Pin */
   GPIO_InitStruct.Pin = I2C1_SDA_EEPROM_Pin|I2C1_SCL_EEPROM_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -930,7 +967,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(IR_OUT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, RF_CE_Pin|IR_OUT_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, RF_CE_Pin|Test_Pin|IR_OUT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, SPI2_CS_RF_Pin|I2C1_SDA_EEPROM_Pin|I2C1_SCL_EEPROM_Pin, GPIO_PIN_SET);

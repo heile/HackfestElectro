@@ -10,6 +10,7 @@ typedef enum{
 	HF_IR_RECEIVER_STATE_GET_REPEAT,
 	HF_IR_RECEIVER_STATE_DATA_READY,
 	HF_IR_RECEIVER_STATE_REPEAT_READY,
+	HF_IR_RECEIVER_STATE_DATA_READ,
 	HF_IR_RECEIVER_STATE_ERROR_PACKAGE,
 }HF_IR_RECEIVER_STATE;
 
@@ -22,10 +23,10 @@ typedef struct{
 	union {
 		uint32_t data;
 		struct{
-			uint8_t address;
-			uint8_t address_inverse;
-			uint8_t command;
 			uint8_t command_inverse;
+			uint8_t command;
+			uint8_t address_inverse;
+			uint8_t address;
 		};
 	};
 	union {

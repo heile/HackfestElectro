@@ -111,6 +111,8 @@
 #define RAM_HOLD_GPIO_Port GPIOC
 #define SPI1_CS_RAM_Pin GPIO_PIN_2
 #define SPI1_CS_RAM_GPIO_Port GPIOD
+#define Test_Pin GPIO_PIN_3
+#define Test_GPIO_Port GPIOB
 #define SPI1_MISO_RAM_Pin GPIO_PIN_4
 #define SPI1_MISO_RAM_GPIO_Port GPIOB
 #define SPI1_MOSI_RAM_Pin GPIO_PIN_5

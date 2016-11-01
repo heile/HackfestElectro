@@ -56,6 +56,9 @@ void HfIrReceiverEdgeInterruption(uint8_t edge_tpe) {
 			case HF_IR_RECEIVER_STATE_REPEAT_READY:
 
 				break;
+			case HF_IR_RECEIVER_STATE_DATA_READ:
+				hf_ir_reciever.state = HF_IR_RECEIVER_STATE_GET_HEADER;
+				break;
 		}
 		break;
 	case HF_INTERRUPTION_EDGE_RSING:
