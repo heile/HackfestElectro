@@ -179,11 +179,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		if (hf_ir_transmitter.state!=HF_IR_TRANSMITTER_STATE_READY){
 			if (hf_ir_transmitter.bit_state==HF_IR_TRANSMITTER_BIT_STATE_PULSE){
 				HAL_GPIO_TogglePin(GPIOB, IR_OUT_Pin);
-				HAL_GPIO_WritePin(Test_GPIO_Port, Test_Pin,SET);
+//				HAL_GPIO_WritePin(Test_GPIO_Port, Test_Pin,SET);	//pin test PB3
 			}
 			else{
 				HAL_GPIO_WritePin(GPIOB, IR_OUT_Pin,RESET);
-				HAL_GPIO_WritePin(Test_GPIO_Port, Test_Pin,RESET);
+//				HAL_GPIO_WritePin(Test_GPIO_Port, Test_Pin,RESET);
 			}
 		}
 	}
