@@ -104,6 +104,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 char dataOut[32];
 uint32_t len;
 
+extern LED_PATTERN_NAME LED_RUNNING_PATTERN;		//
 
 /* USER CODE END PFP */
 
@@ -123,21 +124,30 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	/*
 	static char sens = 0;
 	static uint32_t value = 0;
+	uint16_t min_value = 0;
+	uint16_t max_value = 800;
+
 	if (sens == 0) {
-		if (value < 1000) {
+		if (value < max_value) {
 			value++;
 		} else {
 			sens = 1;
 		}
 	} else {
-		if (value > 0) {
+		if (value > min_value) {
 			value--;
 		} else {
 			sens = 0;
 		}
 	}
 	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, value);
-	*/
+	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, value);
+	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, value);
+	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, value);
+	__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, value);
+	__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, value);
+	__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, value);
+*/
 }
 
 /* USER CODE END 0 */
@@ -193,21 +203,13 @@ int main(void)
 	HAL_TIM_Base_Start_IT(&htim17);
 	HAL_TIM_Base_Start_IT(&htim16);
 
-	uart_init();
-
+	init_uart();
+	init_led_patterns();
 	print_on_start();
-	//test_wifi(hspi2);
+	LED_RUNNING_PATTERN = INFINITY;
 
-	CDC_Transmit_FS(dataOut, strlen(dataOut));//USB(Virtual Com Port) send "System Start!" to PC
-
-	//HAL_UART_Transmit(&huart3, dataOut, strlen(dataOut), 100);//Uart send message "System Start!"
-	//HAL_UART_Receive_IT(&huart3, dataOut, 1);
-
-	//test_eeprom();
-	//test_ram(&hspi1);
-
-
-	systemTimerServiceSetTimer(HF_test_timer, HF_TIMER_MILLISECOND_AUTO_RESET, 500);
+	systemTimerServiceSetTimer(HF_led_timer, HF_TIMER_MILLISECOND_AUTO_RESET, 50);
+	systemTimerServiceSetTimer(HF_msg_timer, HF_TIMER_MILLISECOND_AUTO_RESET, 200);
 
     hf_print("hfboard>");
   /* USER CODE END 2 */
@@ -215,35 +217,13 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
-		if (systemTimerServiceCheckEnd(HF_test_timer) == 0) {
-			//run_led_infinity();
-			test_all_leds();
-			//hf_print("test\r\n");
-
-			/*
-			static char sens = 0;
-			if (sens == 0) {
-				if (htim17.Init.Period < 50000) {
-					htim17.Init.Period += 1000;
-				} else {
-					sens = 1;
-				}
-			} else {
-				if (htim17.Init.Period > 5000) {
-					htim17.Init.Period -= 1000;
-				} else {
-					sens = 0;
-				}
-			}
-			if (HAL_TIM_Base_Init(&htim17) != HAL_OK) {
-				Error_Handler();
-			}
-			*/
-			//HAL_GPIO_TogglePin(GPIOB, IR_OUT_Pin);
-			//printf("Hello \n\r");
+		if (systemTimerServiceCheckEnd(HF_led_timer) == 0) {
+			run_led(LED_RUNNING_PATTERN);
 		}
 
-		handle_incoming_message();
+		if (systemTimerServiceCheckEnd(HF_msg_timer) == 0) {
+			handle_incoming_message();
+		}
 
 
   /* USER CODE END WHILE */
