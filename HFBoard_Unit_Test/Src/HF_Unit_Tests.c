@@ -1,6 +1,8 @@
 #include "main.h"
 #include "stdio.h"
 #include "nRF24L01.h"
+#include "aes.h"
+#include "HF_Leds.h"
 #include "HF_printf.h"
 #include "HF_I2C_Software.h"
 #include "HF_debug_command.h"
@@ -27,6 +29,9 @@ char rx_fifo_rs232;
 
 uint8_t counter_ir;
 
+extern LED_PATTERN_NAME LED_RUNNING_PATTERN;		//
+
+
 // All of these handlers should comes from main.c
 extern ADC_HandleTypeDef hadc;
 extern SPI_HandleTypeDef hspi1;
@@ -38,6 +43,13 @@ extern TIM_HandleTypeDef htim16;
 extern TIM_HandleTypeDef htim17;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart3;
+
+static void phex(uint8_t* str);
+static void test_encrypt_ecb(void);
+static void test_decrypt_ecb(void);
+static void test_encrypt_ecb_verbose(void);
+static void test_encrypt_cbc(void);
+static void test_decrypt_cbc(void);
 
 // USB + RS232 + Hacker
 // WIFI
@@ -60,7 +72,7 @@ void handle_incoming_message(){
 	//wifi
 	if (HF_rf_buffer.rx_state.message_to_process == 1) {
 		HF_rf_buffer.rx_state.message_to_process = 0;
-		hf_print("RF Receive: ");
+		hf_print("\r\nRF Receive: ");
 		hf_print(HF_rf_buffer.rx_buffer.buffer);
 		hf_print("\r\n");
 //			HAL_GPIO_TogglePin(GPIOC, TEST_OUT_PIN_Pin);
@@ -82,10 +94,24 @@ void uart_callback(UART_HandleTypeDef *huart) {
 	}
 }
 
+// IR Receiver
 // Button 1
 // Button 2
-// IR Receiver
 void exti_callback(uint16_t GPIO_Pin){
+	if (GPIO_Pin == GPIO_PIN_0) {
+		hf_print("Button 1 pressed\r\n");
+	} else if (GPIO_Pin == GPIO_PIN_1) {
+		hf_print("Button 2 pressed\r\n");
+		run_next_led();
+	} else if (GPIO_Pin == GPIO_PIN_2) {
+
+	}
+}
+
+// IR Receiver
+// Button 1
+// Button 2
+void old_exti_callback(uint16_t GPIO_Pin){
 	volatile static uint8_t counter = 0;
 		volatile static uint8_t timer_value[80];
 		if (GPIO_Pin == GPIO_PIN_0) {
@@ -122,7 +148,7 @@ void exti_callback(uint16_t GPIO_Pin){
 	//				printf("    ");
 	//			}
 			}
-			printf("\r\n%#X\r\n",value);
+			//printf("\r\n%#X\r\n",value);
 			HAL_UART_Transmit(&huart3, "Botton Fn2\r\n", 12, 100);
 		} else if (GPIO_Pin == GPIO_PIN_2) {
 			if (counter==0){
@@ -183,7 +209,8 @@ void process_shell_command(HF_CMD* cmd){
     			test_eeprom_write();
     			test_eeprom_read();
     			test_ram();
-    			test_led();
+				hf_print("Running double infinity pattern.\r\n");
+				LED_RUNNING_PATTERN = DOUBLE_INFINITY;
     		} else if (strcmp(cmd->argv[1], "usb") == 0) {
     			hf_print_usb("Test USB!\r\n");
     		} else if (strcmp(cmd->argv[1], "rs232") == 0) {
@@ -202,7 +229,23 @@ void process_shell_command(HF_CMD* cmd){
     		} else if (strcmp(cmd->argv[1], "ram") == 0) {
     			test_ram();
     		} else if (strcmp(cmd->argv[1], "led") == 0) {
-    			test_led();
+    			if (cmd->argc > 2 && strcmp(cmd->argv[2], "infinity") == 0) {
+    				hf_print("Running infinity pattern.\r\n");
+    				LED_RUNNING_PATTERN = INFINITY;
+    			} else if (cmd->argc > 2 && strcmp(cmd->argv[2], "dinfinity") == 0) {
+    				hf_print("Running double infinity pattern.\r\n");
+    				LED_RUNNING_PATTERN = DOUBLE_INFINITY;
+    			} else if (cmd->argc > 2 && strcmp(cmd->argv[2], "dloop") == 0) {
+    				hf_print("Running double loop pattern.\r\n");
+    				LED_RUNNING_PATTERN = DOUBLE_LOOP;
+    			} else {
+    				hf_print("Running infinity pattern.\r\n");
+    				LED_RUNNING_PATTERN = INFINITY;
+    			}
+    		} else if (strcmp(cmd->argv[1], "encryption") == 0) {
+    			test_encrypt_cbc();
+    		} else if (strcmp(cmd->argv[1], "decryption") == 0) {
+    			test_decrypt_cbc();
     		}
     	} else {
         	hf_print("You must specify an argument:\r\n");
@@ -247,7 +290,7 @@ void print_on_start(){
 	hf_print_rs232("Hello RS232!\r\n"); HAL_Delay(2);
 }
 
-void uart_init(){
+void init_uart(){
 	HAL_UART_Receive_IT(&huart1, &rx_fifo_hacker_uart_port, 1);
 	HAL_UART_Receive_IT(&huart3, &rx_fifo_rs232, 1);
 }
@@ -357,7 +400,64 @@ void test_ram(){
 	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_SET);
 }
 
-void test_led(){
-	char dataOut[32];
+static void test_encrypt_cbc(void)
+{
+  uint8_t key[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
+  uint8_t iv[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+  uint8_t in[]  = { 0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a,
+                    0xae, 0x2d, 0x8a, 0x57, 0x1e, 0x03, 0xac, 0x9c, 0x9e, 0xb7, 0x6f, 0xac, 0x45, 0xaf, 0x8e, 0x51,
+                    0x30, 0xc8, 0x1c, 0x46, 0xa3, 0x5c, 0xe4, 0x11, 0xe5, 0xfb, 0xc1, 0x19, 0x1a, 0x0a, 0x52, 0xef,
+                    0xf6, 0x9f, 0x24, 0x45, 0xdf, 0x4f, 0x9b, 0x17, 0xad, 0x2b, 0x41, 0x7b, 0xe6, 0x6c, 0x37, 0x10 };
+  uint8_t out[] = { 0x76, 0x49, 0xab, 0xac, 0x81, 0x19, 0xb2, 0x46, 0xce, 0xe9, 0x8e, 0x9b, 0x12, 0xe9, 0x19, 0x7d,
+                    0x50, 0x86, 0xcb, 0x9b, 0x50, 0x72, 0x19, 0xee, 0x95, 0xdb, 0x11, 0x3a, 0x91, 0x76, 0x78, 0xb2,
+                    0x73, 0xbe, 0xd6, 0xb8, 0xe3, 0xc1, 0x74, 0x3b, 0x71, 0x16, 0xe6, 0x9e, 0x22, 0x22, 0x95, 0x16,
+                    0x3f, 0xf1, 0xca, 0xa1, 0x68, 0x1f, 0xac, 0x09, 0x12, 0x0e, 0xca, 0x30, 0x75, 0x86, 0xe1, 0xa7 };
+  uint8_t buffer[64];
+
+  AES128_CBC_encrypt_buffer(buffer, in, 64, key, iv);
+
+  hf_print("CBC encrypt: ");
+
+  if(0 == memcmp((char*) out, (char*) buffer, 64))
+  {
+	  hf_print("SUCCESS!\r\n");
+  }
+  else
+  {
+	  hf_print("FAILURE!\r\n");
+  }
+}
+
+static void test_decrypt_cbc(void)
+{
+  // Example "simulating" a smaller buffer...
+
+  uint8_t key[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
+  uint8_t iv[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+  uint8_t in[]  = { 0x76, 0x49, 0xab, 0xac, 0x81, 0x19, 0xb2, 0x46, 0xce, 0xe9, 0x8e, 0x9b, 0x12, 0xe9, 0x19, 0x7d,
+                    0x50, 0x86, 0xcb, 0x9b, 0x50, 0x72, 0x19, 0xee, 0x95, 0xdb, 0x11, 0x3a, 0x91, 0x76, 0x78, 0xb2,
+                    0x73, 0xbe, 0xd6, 0xb8, 0xe3, 0xc1, 0x74, 0x3b, 0x71, 0x16, 0xe6, 0x9e, 0x22, 0x22, 0x95, 0x16,
+                    0x3f, 0xf1, 0xca, 0xa1, 0x68, 0x1f, 0xac, 0x09, 0x12, 0x0e, 0xca, 0x30, 0x75, 0x86, 0xe1, 0xa7 };
+  uint8_t out[] = { 0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a,
+                    0xae, 0x2d, 0x8a, 0x57, 0x1e, 0x03, 0xac, 0x9c, 0x9e, 0xb7, 0x6f, 0xac, 0x45, 0xaf, 0x8e, 0x51,
+                    0x30, 0xc8, 0x1c, 0x46, 0xa3, 0x5c, 0xe4, 0x11, 0xe5, 0xfb, 0xc1, 0x19, 0x1a, 0x0a, 0x52, 0xef,
+                    0xf6, 0x9f, 0x24, 0x45, 0xdf, 0x4f, 0x9b, 0x17, 0xad, 0x2b, 0x41, 0x7b, 0xe6, 0x6c, 0x37, 0x10 };
+  uint8_t buffer[64];
+
+  AES128_CBC_decrypt_buffer(buffer+0, in+0,  16, key, iv);
+  AES128_CBC_decrypt_buffer(buffer+16, in+16, 16, 0, 0);
+  AES128_CBC_decrypt_buffer(buffer+32, in+32, 16, 0, 0);
+  AES128_CBC_decrypt_buffer(buffer+48, in+48, 16, 0, 0);
+
+  hf_print("CBC decrypt: ");
+
+  if(0 == memcmp((char*) out, (char*) buffer, 64))
+  {
+	  hf_print("SUCCESS!\r\n");
+  }
+  else
+  {
+	  hf_print("FAILURE!\r\n");
+  }
 }
 
