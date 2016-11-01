@@ -577,6 +577,13 @@ void AES128_CBC_decrypt_buffer(uint8_t* output, uint8_t* input, uint32_t length,
   }
 }
 
+void AES128_CBC_encrypt_str(uint8_t* output, char* input, uint32_t length, const uint8_t* key, const uint8_t* iv){
+	AES128_CBC_encrypt_buffer(output, (uint8_t*) input, length, key, iv);
+}
+
+void AES128_CBC_decrypt_str(char* output, uint8_t* input, uint32_t length, const uint8_t* key, const uint8_t* iv){
+	AES128_CBC_decrypt_buffer((uint8_t*) output, input, length, key, iv);
+}
 
 #endif // #if defined(CBC) && CBC
 

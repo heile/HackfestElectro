@@ -27,15 +27,15 @@ typedef enum {
 } HF_SYSTEM_TIMER_SERVICE_MODE;
 
 typedef struct {
-	uint16_t minute;
-	uint16_t second;
-	uint16_t millisecond;
+	uint32_t minute;
+	uint32_t second;
+	uint32_t millisecond;
 } HF_SYSTEM_TIMER;
 
 typedef struct {
 	HF_SYSTEM_TIMER_SERVICE_MODE timerMode;
-	uint16_t startTime;
-	uint16_t lastingTime;
+	uint32_t startTime;
+	uint32_t lastingTime;
 } HF_SYSTEM_TIMER_SERVICE;
 
 
@@ -45,11 +45,11 @@ HF_SYSTEM_TIMER_SERVICE timer_service_table[HF_NUMBER_TIMER];
 
 
 
-void systemTimerServiceSetTimer(HF_SYSTEM_TIMER_SERVICE_ID tiemr_id, HF_SYSTEM_TIMER_SERVICE_MODE timer_mode, uint16_t lastingTime);
+void systemTimerServiceSetTimer(HF_SYSTEM_TIMER_SERVICE_ID tiemr_id, HF_SYSTEM_TIMER_SERVICE_MODE timer_mode, uint32_t lastingTime);
 
 uint8_t systemTimerServiceCheckEnd(HF_SYSTEM_TIMER_SERVICE_ID tiemr_id);
 
-uint16_t systemTimerServiGetDifTime(HF_SYSTEM_TIMER_SERVICE_ID tiemr_id);
+uint32_t systemTimerServiGetDifTime(HF_SYSTEM_TIMER_SERVICE_ID tiemr_id);
 
 
 #endif /* HF_TIMER_SERVICE_H_ */

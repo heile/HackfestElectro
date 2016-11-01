@@ -11,6 +11,9 @@ typedef enum LED_PATTERN_NAME {
 	FLASHALL
 } LED_PATTERN_NAME;
 
+LED_PATTERN_NAME LED_RUNNING_PATTERN;
+uint8_t LED_PATTERN_TOTAL;
+
 void run_led(LED_PATTERN_NAME name);
 void run_next_led();
 void run_led_infinity();

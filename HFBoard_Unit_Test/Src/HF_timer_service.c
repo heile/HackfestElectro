@@ -8,7 +8,7 @@
 
 HF_SYSTEM_TIMER hd_system_timer;
 
-void systemTimerServiceSetTimer(HF_SYSTEM_TIMER_SERVICE_ID tiemr_id, HF_SYSTEM_TIMER_SERVICE_MODE timer_mode, uint16_t lastingTime) {
+void systemTimerServiceSetTimer(HF_SYSTEM_TIMER_SERVICE_ID tiemr_id, HF_SYSTEM_TIMER_SERVICE_MODE timer_mode, uint32_t lastingTime) {
     timer_service_table[tiemr_id].lastingTime = lastingTime;
     timer_service_table[tiemr_id].timerMode = timer_mode;
     if (timer_mode == HF_TIMER_MILLISECOND || timer_mode == HF_TIMER_MILLISECOND_AUTO_RESET) {
@@ -54,10 +54,10 @@ uint8_t systemTimerServiceCheckEnd(HF_SYSTEM_TIMER_SERVICE_ID tiemr_id) {
     }
 }
 
-uint16_t systemTimerServiGetDifTime(HF_SYSTEM_TIMER_SERVICE_ID tiemr_id) {
-    uint16_t instance = 0;
-    uint16_t distance = 0;
-    uint16_t startTime = 0;
+uint32_t systemTimerServiGetDifTime(HF_SYSTEM_TIMER_SERVICE_ID tiemr_id) {
+    uint32_t instance = 0;
+    uint32_t distance = 0;
+    uint32_t startTime = 0;
 //    startTime = timer_service_table[tiemr_id].startTime;
 //    if (timer_service_table[tiemr_id].timerMode == TIMER_MILLISECOND
 //            || timer_service_table[tiemr_id].timerMode == TIMER_MILLISECOND_AUTO_RESET) {

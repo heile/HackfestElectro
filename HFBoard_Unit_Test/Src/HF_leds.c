@@ -1,6 +1,7 @@
+
 #include "stm32f0xx_hal.h"
 #include "stm32f072xb.h"
-#include "HF_Leds.h"
+#include <HF_leds.h>
 #include "main.h"
 
 /* High level pins assignments on Nucleo64
@@ -64,7 +65,7 @@ static const HF_Led HF_LED[7] = {
 					};
 
 
-uint8_t LED_PATTERN_COUNTER = 0;
+volatile uint8_t LED_PATTERN_COUNTER = 0;
 
 HF_Led_Action LED_ACTIONS_INFINITY[] = {
 						   {.list=&HF_LED[0], .list_len=1, .value=800},
@@ -170,6 +171,10 @@ void init_led_patterns(){
 	LED_GROUP_3[1] = HF_LED[6];
 }
 
+void run_next_led(){
+	LED_RUNNING_PATTERN = (LED_RUNNING_PATTERN + 1)%(LED_PATTERN_TOTAL);
+	run_new_led(LED_RUNNING_PATTERN);
+}
 
 // Safe way to change led pattern. Otherwise, it could cause an integer overflow.
 void run_new_led(LED_PATTERN_NAME name){
@@ -185,11 +190,6 @@ void run_led(LED_PATTERN_NAME name){
 	case FLASHALL: run_led_flash(); break;
 	default: run_led_infinity();
 	}
-}
-
-void run_next_led(){
-	LED_RUNNING_PATTERN = (LED_RUNNING_PATTERN + 1)%(LED_PATTERN_TOTAL);
-	run_new_led(LED_RUNNING_PATTERN);
 }
 
 void run_led_infinity(){
@@ -219,13 +219,12 @@ void tick_led_pattern(HF_Led_Pattern* pattern) {
 	  __HAL_TIM_SET_COMPARE(action->list[i].timer_,
 			            action->list[i].channel,
 						action->value);
-	  HAL_Delay(1);
   }
 
   LED_PATTERN_COUNTER++;
 
   //When all actions are done, reset counter to 0
-  if (LED_PATTERN_COUNTER == action_len){
+  if (LED_PATTERN_COUNTER >= action_len){
 	  LED_PATTERN_COUNTER = 0;
   }
 }

@@ -2,10 +2,12 @@
 #include "stdio.h"
 #include "nRF24L01.h"
 #include "aes.h"
-#include "HF_Leds.h"
-#include "HF_printf.h"
+#include <HF_flags.h>
+#include <HF_leds.h>
+#include <HF_print.h>
+#include <HF_shell.h>
 #include "HF_I2C_Software.h"
-#include "HF_debug_command.h"
+#include "HF_unit_tests.h"
 
 /*
  * List of tests handled by this file:
@@ -20,7 +22,8 @@
  *  -
  */
 
-char VERSION_STRING[] = "HF Board v0.01 by Lei and Martin for Hackfest 2016.\r\n";
+const uint8_t ENCRYPTION_KEY[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xaa, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xbb, 0x4f, 0x3c }; 	//16
+const uint8_t ENCRYPTION_IV[] = { 0x00, 0x01, 0x02, 0x03, 0x03, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x01, 0x0f };		//16
 
 char fifo_command;
 
@@ -29,7 +32,7 @@ char rx_fifo_rs232;
 
 uint8_t counter_ir;
 
-extern LED_PATTERN_NAME LED_RUNNING_PATTERN;		//
+extern SHELL_COMMAND_CONSOLE_TYPE;
 
 
 // All of these handlers should comes from main.c
@@ -44,12 +47,6 @@ extern TIM_HandleTypeDef htim17;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart3;
 
-static void phex(uint8_t* str);
-static void test_encrypt_ecb(void);
-static void test_decrypt_ecb(void);
-static void test_encrypt_ecb_verbose(void);
-static void test_encrypt_cbc(void);
-static void test_decrypt_cbc(void);
 
 // USB + RS232 + Hacker
 // WIFI
@@ -72,9 +69,9 @@ void handle_incoming_message(){
 	//wifi
 	if (HF_rf_buffer.rx_state.message_to_process == 1) {
 		HF_rf_buffer.rx_state.message_to_process = 0;
-		hf_print("\r\nRF Receive: ");
-		hf_print(HF_rf_buffer.rx_buffer.buffer);
-		hf_print("\r\n");
+		hf_print_all("\r\nRF Receive: ");
+		hf_print_all(HF_rf_buffer.rx_buffer.buffer);
+		hf_print_all("\r\n");
 //			HAL_GPIO_TogglePin(GPIOC, TEST_OUT_PIN_Pin);
 //			NRF24L01_Transmit(HF_rf_buffer.rx_buffer.buffer);		//WiFi send "System Start!" to host
 //			HAL_GPIO_TogglePin(GPIOC, TEST_OUT_PIN_Pin);
@@ -99,9 +96,9 @@ void uart_callback(UART_HandleTypeDef *huart) {
 // Button 2
 void exti_callback(uint16_t GPIO_Pin){
 	if (GPIO_Pin == GPIO_PIN_0) {
-		hf_print("Button 1 pressed\r\n");
+		hf_print_all("Button 1 pressed\r\n");
 	} else if (GPIO_Pin == GPIO_PIN_1) {
-		hf_print("Button 2 pressed\r\n");
+		hf_print_all("Button 2 pressed\r\n");
 		run_next_led();
 	} else if (GPIO_Pin == GPIO_PIN_2) {
 
@@ -170,126 +167,6 @@ void old_exti_callback(uint16_t GPIO_Pin){
 		}
 }
 
-void HFShellCommand(char * command) {
-    int index = 0;
-    HF_CMD cmd;
-
-    //printf("\n\rDebug Command message: %s\n\r\n\r", debug_command_buffer);
-    HFParseArg(command,&cmd);
-
-    if (strcmp(cmd.argv[0],"") != 0){
-		//hf_print("\r\nDebug Command: ");
-		for (index = 0; index < cmd.argc; index++) {
-			hf_print(cmd.argv[index]);
-			hf_print(" ");
-		}
-		hf_print("\r\n");
-
-		process_shell_command(&cmd);
-    }else{
-    	hf_print("\r\n");
-    }
-
-    hf_print("hfboard>");
-}
-
-void process_shell_command(HF_CMD* cmd){
-    if (strcmp(cmd->argv[0], "help") == 0) {
-    	hf_print("This is a help message. Commands are:\r\n");
-    	hf_print("  test: Test the board devices. Supported arguments are: all, usb, rs232, hacker, wifi, eeprom, ram, led. \r\n");
-    	hf_print("  version: Print version. \r\n");
-    } else if (strcmp(cmd->argv[0], "test") == 0) {
-    	if (cmd->argc > 1){
-    		if (strcmp(cmd->argv[1], "all") == 0) {
-    			hf_print("Testing all the things!\r\n");
-    			hf_print_usb("Test USB!\r\n");
-    			hf_print_rs232("Test RS232!\r\n");
-    			hf_print_hacker("Test Hacker!\r\n");
-    			test_wifi();
-    			test_eeprom_write();
-    			test_eeprom_read();
-    			test_ram();
-				hf_print("Running double infinity pattern.\r\n");
-				LED_RUNNING_PATTERN = DOUBLE_INFINITY;
-    		} else if (strcmp(cmd->argv[1], "usb") == 0) {
-    			hf_print_usb("Test USB!\r\n");
-    		} else if (strcmp(cmd->argv[1], "rs232") == 0) {
-    			hf_print_rs232("Test RS232!\r\n");
-    		} else if (strcmp(cmd->argv[1], "hacker") == 0) {
-    			hf_print_hacker("Test Hacker!\r\n");
-    		} else if (strcmp(cmd->argv[1], "wifi") == 0) {
-    			test_wifi();
-    		} else if (strcmp(cmd->argv[1], "eeprom") == 0) {
-    			if (cmd->argc > 2 && strcmp(cmd->argv[2], "read") == 0) {
-    				test_eeprom_read();
-    			} else {
-        			test_eeprom_write();
-        			test_eeprom_read();
-    			}
-    		} else if (strcmp(cmd->argv[1], "ram") == 0) {
-    			test_ram();
-    		} else if (strcmp(cmd->argv[1], "led") == 0) {
-    			if (cmd->argc > 2 && strcmp(cmd->argv[2], "infinity") == 0) {
-    				hf_print("Running infinity pattern.\r\n");
-    				LED_RUNNING_PATTERN = INFINITY;
-    			} else if (cmd->argc > 2 && strcmp(cmd->argv[2], "dinfinity") == 0) {
-    				hf_print("Running double infinity pattern.\r\n");
-    				LED_RUNNING_PATTERN = DOUBLE_INFINITY;
-    			} else if (cmd->argc > 2 && strcmp(cmd->argv[2], "dloop") == 0) {
-    				hf_print("Running double loop pattern.\r\n");
-    				LED_RUNNING_PATTERN = DOUBLE_LOOP;
-    			} else {
-    				hf_print("Running infinity pattern.\r\n");
-    				LED_RUNNING_PATTERN = INFINITY;
-    			}
-    		} else if (strcmp(cmd->argv[1], "encryption") == 0) {
-    			test_encrypt_cbc();
-    		} else if (strcmp(cmd->argv[1], "decryption") == 0) {
-    			test_decrypt_cbc();
-    		}
-    	} else {
-        	hf_print("You must specify an argument:\r\n");
-        	hf_print("  all: Test all devices.\r\n");
-        	hf_print("  usb: Test USB. This test is interactive. \r\n");
-        	hf_print("  rs232: Test RS232. This test is interactive. \r\n");
-        	hf_print("  hacker: Test Hacker connector (near the supercapacitor). This test is interactive. \r\n");
-        	hf_print("  wifi: Test wifi (You need a server running).\r\n");
-        	hf_print("  eeprom: Test the eeprom. A string will be written and read.\r\n");
-        	hf_print("  ram: Test the ram. A string will be written and read.\r\n");
-        	hf_print("  led: Test the LEDs. Several pattern will be played.\r\n");
-
-    	}
-    } else if (strcmp(cmd->argv[0], "version") == 0) {
-    	hf_print(VERSION_STRING);
-    }
-}
-
-void hf_print(char* pBuffer){
-	hf_print_usb(pBuffer);
-	hf_print_rs232(pBuffer);
-	hf_print_hacker(pBuffer);
-	//HAL_Delay(2);
-}
-
-void hf_print_usb(char* pBuffer){
-	CDC_Transmit_FS(pBuffer, strlen(pBuffer));
-}
-
-void hf_print_rs232(char* pBuffer){
-	HAL_UART_Transmit(&huart3, pBuffer, strlen(pBuffer), 10);
-}
-
-void hf_print_hacker(char* pBuffer){
-	HAL_UART_Transmit(&huart1, pBuffer, strlen(pBuffer), 10);
-}
-
-void print_on_start(){
-	hf_print("\r\n"); HAL_Delay(2);
-	hf_print("Hello all!\r\n"); HAL_Delay(2);
-	hf_print_usb("Hello USB!\r\n"); HAL_Delay(2);
-	hf_print_rs232("Hello RS232!\r\n"); HAL_Delay(2);
-}
-
 void init_uart(){
 	HAL_UART_Receive_IT(&huart1, &rx_fifo_hacker_uart_port, 1);
 	HAL_UART_Receive_IT(&huart3, &rx_fifo_rs232, 1);
@@ -314,7 +191,7 @@ const char TEST_WRITE_BYTE_FS[] = "Writing %#x to address %#x\r\n";
 const char TEST_WRITE_STR_FS[] = "Writing '%s' to address %#x\r\n";
 void test_eeprom_write(){
 	char test_byte = 0x55;
-	char test_string[] = "Eep eep eep ROM";
+	char test_string[] = "Eep_eep_eep_ROM";
 	uint8_t page_addr = 0xA0;
 	uint16_t byte_addr = 0x00;
 	uint16_t string_addr = 0x01;
@@ -322,13 +199,13 @@ void test_eeprom_write(){
 
 	memset(msg,0x00,strlen(msg));
 	sprintf(msg, TEST_WRITE_BYTE_FS, test_byte, byte_addr);
-	hf_print(msg);
+	hf_print_all(msg);
 	i2cWrite(page_addr, byte_addr, test_byte);
 	//HAL_Delay(50);
 
 	memset(msg,0x00,strlen(msg));
 	sprintf(msg, TEST_WRITE_STR_FS, test_string, string_addr);
-	hf_print(msg);
+	hf_print_all(msg);
 	i2cMemWriteSequence(page_addr, string_addr, test_string, strlen(test_string));
 	//HAL_Delay(50);
 }
@@ -346,13 +223,13 @@ void test_eeprom_read(){
 	i2cRead(page_addr, byte_addr, 1, &test_byte);
 	memset(msg,0x00,strlen(msg));
 	sprintf(msg, TEST_READ_BYTE_FS, test_byte, byte_addr);
-	hf_print(msg);
+	hf_print_all(msg);
 
 	memset(test_string,0x00,32);
 	i2cRead(page_addr, string_addr, 15, test_string);
 	memset(msg,0x00,strlen(msg));
 	sprintf(msg, TEST_READ_STR_FS, test_string, string_addr);
-	hf_print(msg);
+	hf_print_all(msg);
 }
 
 void test_ram(){
@@ -400,35 +277,102 @@ void test_ram(){
 	HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_SET);
 }
 
-static void test_encrypt_cbc(void)
-{
-  uint8_t key[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
-  uint8_t iv[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+void encrypt_32byte_str(char* input, uint8_t* output){
+	char in[32];
+	memset(in, 0x00, 32);
+	sprintf(in, input);
+	AES128_CBC_encrypt_str(output, in, 32, ENCRYPTION_KEY, ENCRYPTION_IV);
+}
+
+void decrypt_32byte_str(uint8_t* input, char* output){
+	char out[32];
+	memset(out, 0x00, 32);
+	AES128_CBC_decrypt_str(out, input, 32, ENCRYPTION_KEY, ENCRYPTION_IV);
+	sprintf(output, out);
+}
+
+void print_32byte_str(char* input){
+	char fmt_char[4];
+
+	// Print Message
+	hf_print_all("uint8_t out[] = { ");
+	for(int i=0; i<strlen(input)-2; i++){
+	  sprintf(fmt_char, "%#x", input[i]);
+	  hf_print_all(fmt_char);
+	  if (i < strlen(input)-3){
+		  hf_print_all(", ");
+	  }
+
+	  if ((i % 16) == 15){
+		  hf_print_all("\r\n                  ");
+	  }
+	  memset(fmt_char, 0x00, 4);
+	}
+	hf_print_all("};\r\n");
+}
+
+void test_encrypt_message(char* input){
+  uint8_t buffer[32];
+  char out[32];
+  memset(buffer, 0x00, 32);
+  memset(out, 0x00, 32);
+  encrypt_32byte_str(input,buffer);
+  print_32byte_str(buffer);
+  decrypt_32byte_str(buffer,out);
+  hf_print_all("Decrypted string: ");
+  hf_print_all(out);
+  hf_print_all("\r\n");
+}
+
+void test_encrypt_cbc(void){
+	/*
+  uint8_t key[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };	//16
+  uint8_t iv[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };	//16
   uint8_t in[]  = { 0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a,
                     0xae, 0x2d, 0x8a, 0x57, 0x1e, 0x03, 0xac, 0x9c, 0x9e, 0xb7, 0x6f, 0xac, 0x45, 0xaf, 0x8e, 0x51,
                     0x30, 0xc8, 0x1c, 0x46, 0xa3, 0x5c, 0xe4, 0x11, 0xe5, 0xfb, 0xc1, 0x19, 0x1a, 0x0a, 0x52, 0xef,
-                    0xf6, 0x9f, 0x24, 0x45, 0xdf, 0x4f, 0x9b, 0x17, 0xad, 0x2b, 0x41, 0x7b, 0xe6, 0x6c, 0x37, 0x10 };
+                    0xf6, 0x9f, 0x24, 0x45, 0xdf, 0x4f, 0x9b, 0x17, 0xad, 0x2b, 0x41, 0x7b, 0xe6, 0x6c, 0x37, 0x10 };	//64
   uint8_t out[] = { 0x76, 0x49, 0xab, 0xac, 0x81, 0x19, 0xb2, 0x46, 0xce, 0xe9, 0x8e, 0x9b, 0x12, 0xe9, 0x19, 0x7d,
                     0x50, 0x86, 0xcb, 0x9b, 0x50, 0x72, 0x19, 0xee, 0x95, 0xdb, 0x11, 0x3a, 0x91, 0x76, 0x78, 0xb2,
                     0x73, 0xbe, 0xd6, 0xb8, 0xe3, 0xc1, 0x74, 0x3b, 0x71, 0x16, 0xe6, 0x9e, 0x22, 0x22, 0x95, 0x16,
-                    0x3f, 0xf1, 0xca, 0xa1, 0x68, 0x1f, 0xac, 0x09, 0x12, 0x0e, 0xca, 0x30, 0x75, 0x86, 0xe1, 0xa7 };
+                    0x3f, 0xf1, 0xca, 0xa1, 0x68, 0x1f, 0xac, 0x09, 0x12, 0x0e, 0xca, 0x30, 0x75, 0x86, 0xe1, 0xa7 };	//64
   uint8_t buffer[64];
+  */
 
-  AES128_CBC_encrypt_buffer(buffer, in, 64, key, iv);
+  uint8_t key[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xaa, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xbb, 0x4f, 0x3c };	//16
+  uint8_t iv[]  = { 0x00, 0x01, 0x02, 0x03, 0x03, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x01, 0x0f };	//16
+  char in[32];
+  char fmt_char[4];
+  char buffer[32];
+  uint8_t out[] = { 0x57, 0xf2, 0xd5, 0x62, 0xee, 0x1d, 0x7e, 0x74, 0x65, 0x24, 0x18, 0xd3, 0xd1, 0xe5, 0x23, 0x28,
+                    0xfd, 0xb4, 0x88, 0x54, 0xbf, 0xbc, 0x92, 0xbe, 0xf9, 0xff, 0x5f, 0x90, 0x2d, 0xa7, 0xc0, 0xed };
 
-  hf_print("CBC encrypt: ");
+  memset(in, 0x00, 32);
+  memset(buffer, 0x00, 32);
 
-  if(0 == memcmp((char*) out, (char*) buffer, 64))
+  sprintf(in, "Message to encrypt");
+
+  hf_print_all("Plain text: ");
+  hf_print_all(in);
+  hf_print_all("\r\n");
+
+  AES128_CBC_encrypt_str(buffer, in, 32, key, iv);
+
+  print_32byte_str(buffer);
+
+
+  if(0 == memcmp((char*) out, (char*) buffer, 32))
   {
-	  hf_print("SUCCESS!\r\n");
+	  hf_print_all("SUCCESS!\r\n");
   }
   else
   {
-	  hf_print("FAILURE!\r\n");
+	  hf_print_all("FAILURE!\r\n");
   }
 }
 
-static void test_decrypt_cbc(void)
+void test_decrypt_cbc(void)
 {
   // Example "simulating" a smaller buffer...
 
@@ -449,15 +393,15 @@ static void test_decrypt_cbc(void)
   AES128_CBC_decrypt_buffer(buffer+32, in+32, 16, 0, 0);
   AES128_CBC_decrypt_buffer(buffer+48, in+48, 16, 0, 0);
 
-  hf_print("CBC decrypt: ");
+  hf_print_all("CBC decrypt: ");
 
   if(0 == memcmp((char*) out, (char*) buffer, 64))
   {
-	  hf_print("SUCCESS!\r\n");
+	  hf_print_all("SUCCESS!\r\n");
   }
   else
   {
-	  hf_print("FAILURE!\r\n");
+	  hf_print_all("FAILURE!\r\n");
   }
 }
 

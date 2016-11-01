@@ -5,9 +5,10 @@
  *      Author: HD-L
  */
 
-#include "HF_debug_command.h"
 #include "stm32f0xx.h"
-
+#include "HF_unit_tests.h"
+#include "HF_shell.h"
+#include "HF_leds.h"
 
 /***************Buffer USB ********************/
 uint8_t HF_usb_vcp_RxHead = 0;
@@ -32,9 +33,13 @@ uint8_t HF_hacker_uart_port_RxCount = 0;
 
 /****************End buffer declaration*******/
 
+const char VERSION_STRING[] = "HF Board v0.01 by Lei and Martin for Hackfest 2016.\r\n";
 
 extern UART_HandleTypeDef huart3;
 extern UART_HandleTypeDef huart1;
+
+extern LED_PATTERN_NAME LED_RUNNING_PATTERN;		//
+extern SHELL_COMMAND_CONSOLE_TYPE;
 
 void HFdebugCommand(char * command) {
 	int index = 0;
@@ -66,6 +71,109 @@ void HFdebugCommand(char * command) {
 	}
 }
 
+void HFShellCommand(char * command, SHELL_COMMAND_CONSOLE_TYPE buffer_type) {
+    int index = 0;
+    HF_CMD cmd;
+
+    HFParseArg(command,&cmd);
+
+    if (strcmp(cmd.argv[0],"") != 0){
+    	hf_print_back("\r\n", buffer_type);
+		process_shell_command(&cmd,buffer_type);
+    }else{
+    	hf_print_back("\r\n", buffer_type);
+    }
+
+    hf_print_back("hfboard>", buffer_type);
+}
+
+void process_shell_command(HF_CMD* cmd, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
+    if (strcmp(cmd->argv[0], "help") == 0) {
+    	hf_print_back("This is a help message. Commands are:\r\n", buffer_type);
+    	hf_print_back("  test: Test the board devices. \r\n", buffer_type);
+    	hf_print_back("  enc_flags: Encrypt all flags and print their encrypted value. \r\n", buffer_type);
+    	hf_print_back("  version: Print version. \r\n", buffer_type);
+    	hf_print_back("\r\n", buffer_type);
+    	hf_print_back("test sub-command:\r\n", buffer_type);
+    	hf_print_back("  all: Test all devices.\r\n", buffer_type);
+    	hf_print_back("  usb: Test USB. This test is interactive. \r\n", buffer_type);
+    	hf_print_back("  rs232: Test RS232. This test is interactive. \r\n", buffer_type);
+    	hf_print_back("  hacker: Test Hacker connector (near the supercapacitor). This test is interactive. \r\n", buffer_type);
+    	hf_print_back("  wifi: Test wifi (You need a server running).\r\n", buffer_type);
+    	hf_print_back("  eeprom: Test the eeprom. A string will be written and read.\r\n", buffer_type);
+    	hf_print_back("  eeprom read: Test a read on eeprom. Use this to test a read after a board shutdown.\r\n", buffer_type);
+    	hf_print_back("  ram: Test the ram. A string will be written and read.\r\n", buffer_type);
+    	hf_print_back("  led: Test the LEDs. Several pattern will be played.\r\n", buffer_type);
+    	hf_print_back("  led infinity: Run the infinity pattern.\r\n", buffer_type);
+    	hf_print_back("  led dinfinity: Run the double infinity pattern.\r\n", buffer_type);
+    	hf_print_back("  led dloop: Run the double loop pattern.\r\n", buffer_type);
+    	hf_print_back("  led flash: Run the flash pattern.\r\n", buffer_type);
+    	hf_print_back("  encryption: Test the encryption routine.\r\n", buffer_type);
+    	hf_print_back("  decryption: Test the decryption routine.\r\n", buffer_type);
+    	hf_print_back("  encrypt <word>: Encrypt a word and print the result.\r\n", buffer_type);
+    	hf_print_back("\r\n", buffer_type);
+    	hf_print_back("Press the button 2 to change led patterns\r\n", buffer_type);
+    } else if (strcmp(cmd->argv[0], "test") == 0) {
+    	if (cmd->argc > 1){
+    		if (strcmp(cmd->argv[1], "all") == 0) {
+    			hf_print_back("Testing back in your shell!\r\n", buffer_type);
+    			hf_print_usb("Test USB!\r\n");
+    			hf_print_rs232("Test RS232!\r\n");
+    			hf_print_hacker("Test Hacker!\r\n");
+    			test_wifi();
+    			test_eeprom_write();
+    			test_eeprom_read();
+    			test_ram();
+				hf_print_back("Running double infinity pattern.\r\n", buffer_type);
+				LED_RUNNING_PATTERN = DOUBLE_INFINITY;
+    		} else if (strcmp(cmd->argv[1], "usb") == 0) {
+    			hf_print_usb("Test USB!\r\n");
+    		} else if (strcmp(cmd->argv[1], "rs232") == 0) {
+    			hf_print_rs232("Test RS232!\r\n");
+    		} else if (strcmp(cmd->argv[1], "hacker") == 0) {
+    			hf_print_hacker("Test Hacker!\r\n");
+    		} else if (strcmp(cmd->argv[1], "wifi") == 0) {
+    			test_wifi();
+    		} else if (strcmp(cmd->argv[1], "eeprom") == 0) {
+    			if (cmd->argc > 2 && strcmp(cmd->argv[2], "read") == 0) {
+    				test_eeprom_read();
+    			} else {
+        			test_eeprom_write();
+        			test_eeprom_read();
+    			}
+    		} else if (strcmp(cmd->argv[1], "ram") == 0) {
+    			test_ram();
+    		} else if (strcmp(cmd->argv[1], "led") == 0) {
+    			if (cmd->argc > 2 && strcmp(cmd->argv[2], "infinity") == 0) {
+    				hf_print_back("Running infinity pattern.\r\n", buffer_type);
+    				LED_RUNNING_PATTERN = INFINITY;
+    			} else if (cmd->argc > 2 && strcmp(cmd->argv[2], "dinfinity") == 0) {
+    				hf_print_back("Running double infinity pattern.\r\n", buffer_type);
+    				LED_RUNNING_PATTERN = DOUBLE_INFINITY;
+    			} else if (cmd->argc > 2 && strcmp(cmd->argv[2], "dloop") == 0) {
+    				hf_print_back("Running double loop pattern.\r\n", buffer_type);
+    				LED_RUNNING_PATTERN = DOUBLE_LOOP;
+    			} else {
+    				hf_print_back("Running infinity pattern.\r\n", buffer_type);
+    				LED_RUNNING_PATTERN = INFINITY;
+    			}
+    		} else if (strcmp(cmd->argv[1], "encryption") == 0) {
+    			test_encrypt_cbc();
+    		} else if (strcmp(cmd->argv[1], "decryption") == 0) {
+    			test_decrypt_cbc();
+    		}else if (strcmp(cmd->argv[1], "encrypt") == 0) {
+    			if (cmd->argc > 2) {
+    				test_encrypt_message(cmd->argv[2]);
+    			}
+    		}
+
+    	}
+    } else if (strcmp(cmd->argv[0], "enc_flags") == 0) {
+    	generate_flags();
+    }else if (strcmp(cmd->argv[0], "version") == 0) {
+    	hf_print_back(VERSION_STRING, buffer_type);
+    }
+}
 
 void HF_ShellCommandSetBuffer(char c, SHELL_COMMAND_CONSOLE_TYPE buffer_type) {
 	static uint8_t index_usb_buffer = 0;
@@ -87,7 +195,7 @@ void HF_ShellCommandSetBuffer(char c, SHELL_COMMAND_CONSOLE_TYPE buffer_type) {
 			//printf(" %#X ", c);
 		}
 		if (c == '\r') {
-			HFShellCommand(HF_shell_command_buffer[SHELL_CONSOLE_TYPE_USB_VCP]);
+			HFShellCommand(HF_shell_command_buffer[SHELL_CONSOLE_TYPE_USB_VCP], SHELL_CONSOLE_TYPE_USB_VCP);
 			index_usb_buffer = 0;
 			memset(HF_shell_command_buffer[SHELL_CONSOLE_TYPE_USB_VCP], 0x00, 50);
 		}
@@ -107,7 +215,7 @@ void HF_ShellCommandSetBuffer(char c, SHELL_COMMAND_CONSOLE_TYPE buffer_type) {
 			//printf(" %#X ", c);
 		}
 		if (c == '\r') {
-			HFShellCommand(HF_shell_command_buffer[SHELL_CONSOLE_TYPE_RS232]);
+			HFShellCommand(HF_shell_command_buffer[SHELL_CONSOLE_TYPE_RS232], SHELL_CONSOLE_TYPE_RS232);
 			index_rs232_buffer = 0;
 			memset(HF_shell_command_buffer[SHELL_CONSOLE_TYPE_RS232], 0x00, 50);
 		}
@@ -128,7 +236,7 @@ void HF_ShellCommandSetBuffer(char c, SHELL_COMMAND_CONSOLE_TYPE buffer_type) {
 			//printf(" %#X ", c);
 		}
 		if (c == '\r') {
-			HFShellCommand(HF_shell_command_buffer[SHELL_CONSOLE_TYPE_HACKER_UART_PORT]);
+			HFShellCommand(HF_shell_command_buffer[SHELL_CONSOLE_TYPE_HACKER_UART_PORT], SHELL_CONSOLE_TYPE_HACKER_UART_PORT);
 			index_hacker_usart_port_buffer = 0;
 			memset(HF_shell_command_buffer[SHELL_CONSOLE_TYPE_HACKER_UART_PORT], 0x00, 50);
 

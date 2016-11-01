@@ -5,8 +5,8 @@
  *      Author: HD-L
  */
 
-#ifndef HF_PRINTF_H_
-#define HF_PRINTF_H_
+#ifndef HF_PRINT_H_
+#define HF_PRINT_H_
 
 #include <stdio.h>
 #include <sys/stat.h>
@@ -33,4 +33,4 @@ void hf_print_usb(char* pBuffer);
 void hf_print_rs232(char* pBuffer);
 void hf_print_hacker(char* pBuffer);
 
-#endif /* HF_PRINTF_H_ */
+#endif /* HF_PRINT_H_ */

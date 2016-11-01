@@ -41,6 +41,7 @@
   ******************************************************************************
   */
 /* Includes ------------------------------------------------------------------*/
+
 #include "main.h"
 #include "stm32f0xx_hal.h"
 #include "usb_device.h"
@@ -51,10 +52,11 @@
 #include "usbd_cdc_if.h"
 
 #include "HF_timer_service.h"
-#include "HF_printf.h"
 #include "HF_I2C_Software.h"
-#include "HF_debug_command.h"
-#include "HF_Leds.h"
+#include "HF_leds.h"
+#include "HF_print.h"
+#include "HF_shell.h"
+
 
 /* USER CODE END Includes */
 
@@ -66,6 +68,7 @@ SPI_HandleTypeDef hspi2;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim7;
 TIM_HandleTypeDef htim16;
 TIM_HandleTypeDef htim17;
@@ -92,6 +95,7 @@ static void MX_TIM17_Init(void);
 static void MX_TIM16_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM7_Init(void);
+static void MX_TIM6_Init(void);
 static void MX_NVIC_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
@@ -180,6 +184,7 @@ int main(void)
   MX_USB_DEVICE_Init();
   MX_SPI1_Init();
   MX_TIM7_Init();
+  MX_TIM6_Init();
 
   /* Initialize interrupts */
   MX_NVIC_Init();
@@ -209,9 +214,9 @@ int main(void)
 	LED_RUNNING_PATTERN = INFINITY;
 
 	systemTimerServiceSetTimer(HF_led_timer, HF_TIMER_MILLISECOND_AUTO_RESET, 50);
-	systemTimerServiceSetTimer(HF_msg_timer, HF_TIMER_MILLISECOND_AUTO_RESET, 200);
+	systemTimerServiceSetTimer(HF_msg_timer, HF_TIMER_MILLISECOND_AUTO_RESET, 5);
 
-    hf_print("hfboard>");
+    hf_print_all("hfboard>");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -312,9 +317,6 @@ static void MX_NVIC_Init(void)
   /* EXTI2_3_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(EXTI2_3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
-  /* TIM7_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(TIM7_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(TIM7_IRQn);
 }
 
 /* ADC init function */
@@ -498,13 +500,37 @@ static void MX_TIM3_Init(void)
     Error_Handler();
   }
 
-  sConfigOC.Pulse = 300;
+  sConfigOC.Pulse = 30;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
   {
     Error_Handler();
   }
 
   HAL_TIM_MspPostInit(&htim3);
+
+}
+
+/* TIM6 init function */
+static void MX_TIM6_Init(void)
+{
+
+  TIM_MasterConfigTypeDef sMasterConfig;
+
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 0;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 632;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
 }
 
@@ -517,7 +543,7 @@ static void MX_TIM7_Init(void)
   htim7.Instance = TIM7;
   htim7.Init.Prescaler = 0;
   htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim7.Init.Period = 0;
+  htim7.Init.Period = 2700;
   if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
   {
     Error_Handler();
@@ -632,11 +658,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(PC13_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Button_Fn1_Pin Button_Fn2_Pin IR_REC_Pin */
-  GPIO_InitStruct.Pin = Button_Fn1_Pin|Button_Fn2_Pin|IR_REC_Pin;
+  /*Configure GPIO pins : Button_Fn1_Pin Button_Fn2_Pin */
+  GPIO_InitStruct.Pin = Button_Fn1_Pin|Button_Fn2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : IR_REC_Pin */
+  GPIO_InitStruct.Pin = IR_REC_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(IR_REC_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : RF_IRQ_Pin */
   GPIO_InitStruct.Pin = RF_IRQ_Pin;

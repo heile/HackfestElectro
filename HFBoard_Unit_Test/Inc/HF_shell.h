@@ -5,11 +5,11 @@
  *      Author: HD-L
  */
 
-#ifndef HF_DEBUG_COMMAND_H_
-#define HF_DEBUG_COMMAND_H_
+#ifndef HF_SHELL_H_
+#define HF_SHELL_H_
 
-#include <stdio.h>
-#include <string.h>
+#include "stdio.h"
+#include "string.h"
 #include "HF_functions.h"
 
 typedef struct HF_CMD {
@@ -30,12 +30,13 @@ extern uint8_t HF_rs232_RxCount;
 extern uint8_t HF_hacker_uart_port_RxCount;
 
 
-typedef enum {
+typedef enum SHELL_COMMAND_CONSOLE_TYPE {
 	SHELL_CONSOLE_TYPE_USB_VCP=0,
 	SHELL_CONSOLE_TYPE_RS232,
 	SHELL_CONSOLE_TYPE_HACKER_UART_PORT,
 	SHELL_CONSOLE_TYPE_ALL,
 }SHELL_COMMAND_CONSOLE_TYPE;
+
 
 void HFParseArg(char* message, HF_CMD* cmd);
 
@@ -45,4 +46,4 @@ HF_FUNCTION_RETURN_STATE HF_shell_command_Read(uint8_t * fifo, SHELL_COMMAND_CON
 
 HF_FUNCTION_RETURN_STATE HF_shell_command_set_rx_buffer(uint8_t* Buf, uint32_t Len, SHELL_COMMAND_CONSOLE_TYPE buffer_type);
 
-#endif /* HF_DEBUG_COMMAND_H_ */
+#endif /* HF_SHELL_H_ */
