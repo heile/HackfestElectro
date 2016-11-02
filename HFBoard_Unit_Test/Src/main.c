@@ -125,33 +125,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
 //rhythme
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	/*
-	static char sens = 0;
-	static uint32_t value = 0;
-	uint16_t min_value = 0;
-	uint16_t max_value = 800;
-
-	if (sens == 0) {
-		if (value < max_value) {
-			value++;
-		} else {
-			sens = 1;
-		}
-	} else {
-		if (value > min_value) {
-			value--;
-		} else {
-			sens = 0;
-		}
-	}
-	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, value);
-	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, value);
-	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, value);
-	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, value);
-	__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, value);
-	__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, value);
-	__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, value);
-*/
+	timer_callback(htim);
 }
 
 /* USER CODE END 0 */
@@ -191,14 +165,14 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
 
-
+  	//PWM LED 1, LED 2, LED 3, LED4
 	HAL_TIM_Base_Start(&htim2);
 
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
-
+	//PWM LED 5, LED 6, LED 7
 	HAL_TIM_Base_Start(&htim3);
 
 	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
@@ -207,6 +181,9 @@ int main(void)
 
 	HAL_TIM_Base_Start_IT(&htim17);
 	HAL_TIM_Base_Start_IT(&htim16);
+
+	HAL_TIM_Base_Start_IT(&htim7);
+	//HAL_TIM_Base_Start_IT(&htim6);	//Active automatiquement au moment send IR code
 
 	init_uart();
 	init_led_patterns();

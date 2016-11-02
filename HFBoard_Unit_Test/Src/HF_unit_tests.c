@@ -7,6 +7,8 @@
 #include <HF_print.h>
 #include <HF_shell.h>
 #include "HF_I2C_Software.h"
+#include "HF_IR_Transmitter.h"
+#include "HF_IR_Receiver.h"
 #include "HF_unit_tests.h"
 
 /*
@@ -76,6 +78,13 @@ void handle_incoming_message(){
 //			NRF24L01_Transmit(HF_rf_buffer.rx_buffer.buffer);		//WiFi send "System Start!" to host
 //			HAL_GPIO_TogglePin(GPIOC, TEST_OUT_PIN_Pin);
 	}
+
+	//IR Receiver
+	if (hf_ir_reciever.state ==  HF_IR_RECEIVER_STATE_DATA_READY){
+		hf_ir_reciever.state =  HF_IR_RECEIVER_STATE_DATA_READ;
+		hf_print_all("\r\IR Receive: ");
+		printf("DATA: %#X, Address %#X, Command %#X\r\n",hf_ir_reciever.data, hf_ir_reciever.address,hf_ir_reciever.command);
+	}
 }
 
 // RS232 Receiver
@@ -95,13 +104,69 @@ void uart_callback(UART_HandleTypeDef *huart) {
 // Button 1
 // Button 2
 void exti_callback(uint16_t GPIO_Pin){
-	if (GPIO_Pin == GPIO_PIN_0) {
+	if (GPIO_Pin == GPIO_PIN_0) {			//Button Fn1 interruption
 		hf_print_all("Button 1 pressed\r\n");
-	} else if (GPIO_Pin == GPIO_PIN_1) {
+	} else if (GPIO_Pin == GPIO_PIN_1) {	//Button Fn2 interruption
 		hf_print_all("Button 2 pressed\r\n");
 		run_next_led();
-	} else if (GPIO_Pin == GPIO_PIN_2) {
+	} else if (GPIO_Pin == GPIO_PIN_2) {	//IR receiver interruption
+		if (HAL_GPIO_ReadPin(IR_REC_GPIO_Port,IR_REC_Pin)==RESET){
+			HfIrReceiverEdgeInterruption(HF_INTERRUPTION_EDGE_FALLING);
+		}else{
+			HfIrReceiverEdgeInterruption(HF_INTERRUPTION_EDGE_RSING);
+		}
+	}
+}
 
+// timer 6 -> IR Transmitter
+// timer 7 -> IR Transmitter, IR receiver
+// timer 16 -> base du temps millisecond
+// timer 17 -> Leds
+extern TIM_HandleTypeDef htim6;
+extern TIM_HandleTypeDef htim7;
+extern TIM_HandleTypeDef htim16;
+extern TIM_HandleTypeDef htim17;
+void timer_callback(TIM_HandleTypeDef *htim){
+	if (htim == &htim17) {
+		/*
+			static char sens = 0;
+			static uint32_t value = 0;
+			uint16_t min_value = 0;
+			uint16_t max_value = 800;
+
+			if (sens == 0) {
+				if (value < max_value) {
+					value++;
+				} else {
+					sens = 1;
+				}
+			} else {
+				if (value > min_value) {
+					value--;
+				} else {
+					sens = 0;
+				}
+			}
+			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, value);
+			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, value);
+			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, value);
+			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_4, value);
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, value);
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, value);
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, value);
+		*/
+	}else if (htim == &htim7){
+		hf_ir_reciever.timer_tick++;
+		HfIrTransmitterSendCode();
+	}else if (htim == &htim6){
+		if (hf_ir_transmitter.state!=HF_IR_TRANSMITTER_STATE_READY){
+			if (hf_ir_transmitter.bit_state==HF_IR_TRANSMITTER_BIT_STATE_PULSE){
+				HAL_GPIO_TogglePin(GPIOB, IR_OUT_Pin);
+			}
+			else{
+				HAL_GPIO_WritePin(GPIOB, IR_OUT_Pin,RESET);
+			}
+		}
 	}
 }
 
@@ -174,11 +239,11 @@ void init_uart(){
 
 void test_wifi(){
 	char dataOut[32] = "Love is in the air.";
-	uint8_t MyAddress[] = { 's', 'e', 'r', 'v', '1' };	/* My address */
-	uint8_t TxAddress[] = { 'c', 'l', 'i', 'e', '1' };	/* Receiver address */
+	uint8_t MyAddress[] = { 'c', 'l', 'i', 'e', '1' };	/* My address */
+	uint8_t TxAddress[] = { 's', 'e', 'r', 'v', '1' };	/* Receiver address */
 
 	NRF24L01_Init(&hspi2, 1, 32);// Definition des pins sont dans le fichier STM32CubeMX, fichier Nucleo64_Test1.ioc
-	NRF24L01_SetRF(NRF24L01_DataRate_2M, NRF24L01_OutputPower_M18dBm);
+	NRF24L01_SetRF(NRF24L01_DataRate_2M, NRF24L01_OutputPower_M6dBm);
 	NRF24L01_SetMyAddress(MyAddress);
 	NRF24L01_SetTxAddress(TxAddress);
 
@@ -405,3 +470,18 @@ void test_decrypt_cbc(void)
   }
 }
 
+void test_ir_transmitter(void){
+	/***************************test IR Transmitter******************/
+	if (hf_ir_transmitter.state == HF_IR_TRANSMITTER_STATE_READY){
+		HfIrTransmitterSetData(0x00,0x2A,HF_IR_TRANSMITTER_CODE_TYPE_NEC);
+		hf_ir_transmitter.state = HF_IR_TRANSMITTER_STATE_SNED;
+	}
+}
+
+void test_ir_receiver(void){
+	if (hf_ir_reciever.state ==  HF_IR_RECEIVER_STATE_DATA_READY){
+		hf_ir_reciever.state =  HF_IR_RECEIVER_STATE_DATA_READ;
+		printf("\r\n%#X\r\n",hf_ir_reciever.data);
+		printf("Address %#X, Command %#X\r\n",hf_ir_reciever.address,hf_ir_reciever.command);
+	}
+}

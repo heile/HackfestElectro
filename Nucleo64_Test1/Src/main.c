@@ -116,17 +116,17 @@ char rx_fifo_rs232;
 uint32_t len;
 uint8_t counter_ir;
 
-///* My address */
-//uint8_t MyAddress[] = { 'c', 'l', 'i', 'e', '1' };
-//
-///* Receiver address */
-//uint8_t TxAddress[] = { 's', 'e', 'r', 'v', '1' };
-
 /* My address */
-uint8_t MyAddress[] = { 's', 'e', 'r', 'v', '1' };
+uint8_t MyAddress[] = { 'c', 'l', 'i', 'e', '1' };
 
 /* Receiver address */
-uint8_t TxAddress[] = { 'c', 'l', 'i', 'e', '1' };
+uint8_t TxAddress[] = { 's', 'e', 'r', 'v', '1' };
+
+///* My address */
+//uint8_t MyAddress[] = { 's', 'e', 'r', 'v', '1' };
+//
+///* Receiver address */
+//uint8_t TxAddress[] = { 'c', 'l', 'i', 'e', '1' };
 
 /* USER CODE END PFP */
 
@@ -324,7 +324,7 @@ int main(void)
 	strcpy(dataOut, "System Start!\n\r");	//Message to print and send
 
 	NRF24L01_Init(&hspi2, 1, 32);// Definition des pins sont dans le fichier STM32CubeMX, fichier Nucleo64_Test1.ioc
-	NRF24L01_SetRF(NRF24L01_DataRate_2M, NRF24L01_OutputPower_M18dBm);
+	NRF24L01_SetRF(NRF24L01_DataRate_2M, NRF24L01_OutputPower_M6dBm);
 	NRF24L01_SetMyAddress(MyAddress);
 	NRF24L01_SetTxAddress(TxAddress);
 

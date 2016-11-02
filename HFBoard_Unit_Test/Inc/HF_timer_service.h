@@ -14,6 +14,7 @@ typedef enum {
 	HF_TMR_DELAY, // Timer delais d'attente
 	HF_led_timer,
 	HF_msg_timer,
+	HF_TMR_IR_RECEIVER,
 	HF_NUMBER_TIMER
 } HF_SYSTEM_TIMER_SERVICE_ID;
 

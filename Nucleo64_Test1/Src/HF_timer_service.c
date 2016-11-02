@@ -23,7 +23,7 @@ void systemTimerServiceSetTimer(HF_SYSTEM_TIMER_SERVICE_ID tiemr_id, HF_SYSTEM_T
 uint8_t systemTimerServiceCheckEnd(HF_SYSTEM_TIMER_SERVICE_ID tiemr_id) {
     if (timer_service_table[tiemr_id].timerMode == HF_TIMER_MILLISECOND
             || timer_service_table[tiemr_id].timerMode == HF_TIMER_MILLISECOND_AUTO_RESET) {
-        if ((hd_system_timer.millisecond - timer_service_table[tiemr_id].startTime) >= timer_service_table[tiemr_id].lastingTime) {
+        if ((uint16_t)(hd_system_timer.millisecond - timer_service_table[tiemr_id].startTime) >= timer_service_table[tiemr_id].lastingTime) {
             if (timer_service_table[tiemr_id].timerMode == HF_TIMER_MILLISECOND_AUTO_RESET) {
                 timer_service_table[tiemr_id].startTime += timer_service_table[tiemr_id].lastingTime;
             }
@@ -33,7 +33,7 @@ uint8_t systemTimerServiceCheckEnd(HF_SYSTEM_TIMER_SERVICE_ID tiemr_id) {
         }
     } else if (timer_service_table[tiemr_id].timerMode == HF_TIMER_SECOND
             || timer_service_table[tiemr_id].timerMode == HF_TIMER_SECOND_AUTO_RESET) {
-        if ((hd_system_timer.second - timer_service_table[tiemr_id].startTime) >= timer_service_table[tiemr_id].lastingTime) {
+        if ((uint16_t)(hd_system_timer.second - timer_service_table[tiemr_id].startTime) >= timer_service_table[tiemr_id].lastingTime) {
             if (timer_service_table[tiemr_id].timerMode == HF_TIMER_SECOND_AUTO_RESET) {
                 timer_service_table[tiemr_id].startTime += timer_service_table[tiemr_id].lastingTime;
             }
@@ -43,7 +43,7 @@ uint8_t systemTimerServiceCheckEnd(HF_SYSTEM_TIMER_SERVICE_ID tiemr_id) {
         }
     } else if (timer_service_table[tiemr_id].timerMode == HF_TIMER_MINUTE
             || timer_service_table[tiemr_id].timerMode == HF_TIMER_MINUTE_AUTO_RESET) {
-        if ((hd_system_timer.minute - timer_service_table[tiemr_id].startTime) >= timer_service_table[tiemr_id].lastingTime) {
+        if ((uint16_t)(hd_system_timer.minute - timer_service_table[tiemr_id].startTime) >= timer_service_table[tiemr_id].lastingTime) {
             if (timer_service_table[tiemr_id].timerMode == HF_TIMER_MINUTE_AUTO_RESET) {
                 timer_service_table[tiemr_id].startTime += timer_service_table[tiemr_id].lastingTime;
             }

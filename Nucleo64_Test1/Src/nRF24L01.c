@@ -386,7 +386,7 @@ uint8_t NRF24L01_Init(SPI_HandleTypeDef *hspi, uint8_t channel,
 
 void NRF24L01_SetMyAddress(uint8_t *adr) {
 	NRF24L01_CE_LOW;
-	NRF24L01_WriteRegisterMulti(NRF24L01_REG_RX_ADDR_P1, adr, 5);
+	NRF24L01_WriteRegisterMulti(NRF24L01_REG_RX_ADDR_P0, adr, 5);
 	NRF24L01_CE_HIGH;
 }
 

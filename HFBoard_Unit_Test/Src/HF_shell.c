@@ -165,6 +165,12 @@ void process_shell_command(HF_CMD* cmd, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
     			if (cmd->argc > 2) {
     				test_encrypt_message(cmd->argv[2]);
     			}
+    		}else if (strcmp(cmd->argv[1], "ir") == 0) {
+    			if (cmd->argc > 2 && strcmp(cmd->argv[2], "tx") == 0) {
+    				test_ir_transmitter();
+    			}else{
+    				test_ir_transmitter();
+    			}
     		}
 
     	}
