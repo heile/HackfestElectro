@@ -41,7 +41,6 @@
   ******************************************************************************
   */
 /* Includes ------------------------------------------------------------------*/
-
 #include "main.h"
 #include "stm32f0xx_hal.h"
 #include "usb_device.h"
@@ -56,6 +55,7 @@
 #include "HF_leds.h"
 #include "HF_print.h"
 #include "HF_shell.h"
+#include "HF_button.h"
 
 
 /* USER CODE END Includes */
@@ -186,6 +186,7 @@ int main(void)
 	//HAL_TIM_Base_Start_IT(&htim6);	//Active automatiquement au moment send IR code
 
 	init_uart();
+	HfButtonInit();
 	init_led_patterns();
 	print_on_start();
 	LED_RUNNING_PATTERN = INFINITY;
@@ -207,6 +208,7 @@ int main(void)
 			handle_incoming_message();
 		}
 
+		HfButtonProcess();
 
   /* USER CODE END WHILE */
 
@@ -635,17 +637,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(PC13_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Button_Fn1_Pin Button_Fn2_Pin */
-  GPIO_InitStruct.Pin = Button_Fn1_Pin|Button_Fn2_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : IR_REC_Pin */
-  GPIO_InitStruct.Pin = IR_REC_Pin;
+  /*Configure GPIO pins : Button_Fn1_Pin Button_Fn2_Pin IR_REC_Pin */
+  GPIO_InitStruct.Pin = Button_Fn1_Pin|Button_Fn2_Pin|IR_REC_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(IR_REC_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : RF_IRQ_Pin */
   GPIO_InitStruct.Pin = RF_IRQ_Pin;

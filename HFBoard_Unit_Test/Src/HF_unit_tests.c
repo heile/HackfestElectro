@@ -10,6 +10,7 @@
 #include "HF_IR_Transmitter.h"
 #include "HF_IR_Receiver.h"
 #include "HF_unit_tests.h"
+#include "HF_button.h"
 
 /*
  * List of tests handled by this file:
@@ -105,10 +106,26 @@ void uart_callback(UART_HandleTypeDef *huart) {
 // Button 2
 void exti_callback(uint16_t GPIO_Pin){
 	if (GPIO_Pin == GPIO_PIN_0) {			//Button Fn1 interruption
-		hf_print_all("Button 1 pressed\r\n");
+		if (HAL_GPIO_ReadPin(Button_Fn1_GPIO_Port,Button_Fn1_Pin)==GPIO_PIN_SET){
+			if (HAL_GPIO_ReadPin(Button_Fn2_GPIO_Port,Button_Fn2_Pin)==GPIO_PIN_SET){
+				systemTimerServiceSetTimer(HF_TMR_BUTTON, HF_TIMER_MILLISECOND, 3000);
+				hf_button_mode.debug_mode_flag_check = 1;
+			}
+			hf_print_all("Button 1 pressed\r\n");
+		}else{
+			hf_print_all("Button 1 released\r\n");
+		}
 	} else if (GPIO_Pin == GPIO_PIN_1) {	//Button Fn2 interruption
-		hf_print_all("Button 2 pressed\r\n");
-		run_next_led();
+		if (HAL_GPIO_ReadPin(Button_Fn2_GPIO_Port,Button_Fn2_Pin)==GPIO_PIN_SET){
+			if (HAL_GPIO_ReadPin(Button_Fn1_GPIO_Port,Button_Fn1_Pin)==GPIO_PIN_SET){
+				systemTimerServiceSetTimer(HF_TMR_BUTTON, HF_TIMER_MILLISECOND, 3000);
+				hf_button_mode.debug_mode_flag_check = 1;
+			}
+			hf_print_all("Button 2 pressed\r\n");
+			run_next_led();
+		}else{
+			hf_print_all("Button 2 released\r\n");
+		}
 	} else if (GPIO_Pin == GPIO_PIN_2) {	//IR receiver interruption
 		if (HAL_GPIO_ReadPin(IR_REC_GPIO_Port,IR_REC_Pin)==RESET){
 			HfIrReceiverEdgeInterruption(HF_INTERRUPTION_EDGE_FALLING);
