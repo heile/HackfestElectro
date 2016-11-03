@@ -46,8 +46,8 @@ bool i2cWrite(uint8_t addr_, uint8_t reg, uint8_t data);
  * @param size <=16
  * @return true -> ok; false -> probleme
  */
-bool i2cMemWriteSequence(uint8_t addr, uint8_t reg, uint8_t *data, uint8_t size);
-bool i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf);
+bool i2cMemWriteSequence(uint8_t addr, uint8_t reg, uint8_t *data, uint16_t size);
+bool i2cRead(uint8_t addr_, uint8_t reg, uint16_t len, uint8_t* buf);
 uint16_t i2cGetErrorCounter(void);
 void i2cSetOverclock(uint8_t OverClock);
 

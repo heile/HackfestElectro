@@ -120,14 +120,14 @@ void process_shell_command(HF_CMD* cmd, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
 				}
 			} else if (strcmp(cmd->argv[1], "le") == 0) {
 				uint8_t buffer[2048];
-				eeprom_cat24c16_read((uint8_t)strtol(cmd->argv[2], NULL, 0),buffer,(uint8_t)strtol(cmd->argv[3], NULL, 0));
+				eeprom_cat24c16_read((uint8_t)strtol(cmd->argv[2], NULL, 0),buffer,(uint16_t)strtol(cmd->argv[3], NULL, 0));
 			} else if (strcmp(cmd->argv[1], "ec") == 0) {
 				int i=0;
 				uint8_t buffer[2048];
 				for (i=0;i<30;i++){
 					buffer[i]=i;
 				}
-				eeprom_cat24c16_write((uint8_t)strtol(cmd->argv[2], NULL, 0),buffer,(uint8_t)strtol(cmd->argv[3], NULL, 0));
+				eeprom_cat24c16_write((uint8_t)strtol(cmd->argv[2], NULL, 0),buffer,(uint16_t)strtol(cmd->argv[3], NULL, 0));
 			}
     	} else {
         	hf_print_back("Wrong arguments\r\n", buffer_type);
