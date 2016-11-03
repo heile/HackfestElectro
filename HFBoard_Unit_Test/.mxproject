@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=D:/Project/Program/HackfestElectro/HFBoard_Unit_Test/Inc
+HeaderPath=E:/ClubSE/Projet/Hackfest2016/Electronique/HackfestElectro/HFBoard_Unit_Test/Inc
 HeaderFiles=usb_device.h;usbd_conf.h;usbd_desc.h;usbd_cdc_if.h;stm32f0xx_it.h;stm32f0xx_hal_conf.h;main.h;
-SourcePath=D:/Project/Program/HackfestElectro/HFBoard_Unit_Test/Src
+SourcePath=E:/ClubSE/Projet/Hackfest2016/Electronique/HackfestElectro/HFBoard_Unit_Test/Src
 SourceFiles=usb_device.h;usbd_conf.h;usbd_desc.h;usbd_cdc_if.h;stm32f0xx_it.h;stm32f0xx_hal_conf.h;main.h;usb_device.c;usbd_conf.c;usbd_desc.c;usbd_cdc_if.c;stm32f0xx_it.c;stm32f0xx_hal_msp.c;main.c;
 
 [PreviousLibFiles]

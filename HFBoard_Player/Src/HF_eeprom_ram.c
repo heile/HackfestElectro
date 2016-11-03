@@ -19,11 +19,101 @@ extern SHELL_COMMAND_CONSOLE_TYPE;
  * EEPROM
  */
 void eeprom_write(MEM_ADDR* addr, uint8_t* in, uint8_t len){
-	i2cMemWriteSequence(addr->page, addr->addr, in, len);
+	i2cMemWriteSequence((0xA0|((addr->page>>4)&0x70)), (((addr->page<<4)&0xF0)|(addr->addr&0x0F)), in, len);
 }
 
 void eeprom_read(MEM_ADDR* addr, uint8_t* out, uint8_t len){
-	i2cRead(addr->page, addr->addr, len, out);
+	i2cRead((0xA0|((addr->page>>4)&0x70)), (((addr->page<<4)&0xF0)|(addr->addr&0x0F)), len, out);
+}
+
+void eeprom_cat24c16_read(uint16_t addr, uint8_t* out, uint16_t len){
+	int i=0;
+	printf("EEPROM Read:\r\n");
+	printf("     0x00 0x01 0x02 0x03 0x04 0x05 0x06 0x07 0x08 0x09 0x0A 0x0B 0x0C 0x0D 0x0E 0x0F\r\n");
+	for(i=(addr & 0x000F);i>0;i--){
+		printf("     ");
+	}
+	i2cRead(0xA0|((addr>>4)&0x70),(addr&0xFF),len,out);
+	if ((16-(addr & 0x000F))>=len){
+//		i2cRead(0xA0|((addr>>4)&0x70),(addr&0xFF),len,out);
+		printf("\r\n0x%02X  ",addr>>4);
+		for(i=0;i<len;i++){
+			printf("%02X   ",out[i]);
+		}
+		len = 0;
+	}else{
+//		i2cRead(0xA0|((addr>>4)&0x70),(addr&0xFF),16-(addr & 0x000F),out);
+		printf("\r\n0x%02X  ",addr>>4);
+		for(i=0;i<16-(addr & 0x000F);i++){
+			printf("%02X   ",out[i]);
+		}
+		len -= 16-(addr & 0x000F);
+		out += 16-(addr & 0x000F);
+		addr += 16;
+	}
+	while(len>=16){
+//		i2cRead(0xA0|((addr>>4)&0x70),(addr&0xFF),len,out);
+		printf("\r\n0x%02X  ",addr>>4);
+		for(i=0;i<16;i++){
+			printf("%02X   ",out[i]);
+		}
+		len-=16;
+		out+=16;
+		addr += 16;
+	}
+	if (len>0){
+//		i2cRead(0xA0|((addr>>4)&0x70),(addr&0xFF),len,out);
+		printf("\r\n0x%02X  ",addr>>4);
+		for(i=0;i<len;i++){
+			printf("%02X ",out[i]);
+		}
+	}
+	printf("\r\nEND\r\n");
+}
+
+void eeprom_cat24c16_write(uint16_t addr, uint8_t* out, uint16_t len){
+	int i=0;
+	printf("EEPROM Write:\r\n");
+	printf("00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\r\n");
+	for(i=(addr & 0x000F);i>0;i--){
+		printf("** ");
+	}
+	if ((16-(addr & 0x000F))>=len){
+		i2cMemWriteSequence(0xA0|((addr>>4)&0x70),(addr&0xFF), out, len);
+		for(i=0;i<len;i++){
+			printf("%02X ",out[i]);
+		}
+		printf("\r\n");
+		len = 0;
+	}else{
+		i2cMemWriteSequence(0xA0|((addr>>4)&0x70),(addr&0xFF),out,16-(addr & 0x000F));
+		for(i=0;i<16-(addr & 0x000F);i++){
+			printf("%02X ",out[i]);
+		}
+		printf("\r\n");
+		len -= 16-(addr & 0x000F);
+		out += 16-(addr & 0x000F);
+		addr += 16;
+	}
+
+	while(len>=16){
+		i2cMemWriteSequence(0xA0|((addr>>4)&0x70),(addr&0xFF),out,len);
+		for(i=0;i<16;i++){
+			printf("%02X ",out[i]);
+		}
+		printf("\r\n");
+		len-=16;
+		out+=16;
+		addr += 16;
+	}
+	if (len>0){
+		i2cMemWriteSequence(0xA0|((addr>>4)&0x70),(addr&0xFF),out,len);
+		for(i=0;i<len;i++){
+			printf("%02X ",out[i]);
+		}
+		printf("\r\n");
+	}
+	printf("END\r\n");
 }
 
 void eeprom_write_str(MEM_ADDR* addr, char* in){
@@ -64,7 +154,7 @@ void eeprom_print_hex(MEM_ADDR* addr, uint8_t len, SHELL_COMMAND_CONSOLE_TYPE bu
 		eeprom_read_str(addr, buf, len);
 
 		for(int i=0; i<len; i++){
-		  sprintf(fmt_char, "%#x", buf[i]);
+		  sprintf(fmt_char, "0x%02x", buf[i]);
 		  hf_print_back(fmt_char, buffer_type);
 		  if (i < strlen(buf)-1){
 			  hf_print_back(", ", buffer_type);

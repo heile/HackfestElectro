@@ -124,6 +124,7 @@ void process_shell_command(HF_CMD* cmd, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
     			test_eeprom_write();
     			test_eeprom_read();
     			test_ram();
+				test_ir_transmitter();
 				hf_print_back("Running double infinity pattern.\r\n", buffer_type);
 				LED_RUNNING_PATTERN = DOUBLE_INFINITY;
     		} else if (strcmp(cmd->argv[1], "usb") == 0) {

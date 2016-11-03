@@ -12,11 +12,29 @@
 
 #define MEM_ACCESS_MAX_LEN 80
 
-typedef struct
+typedef union
 {
-  uint16_t page;	//Usually the low part
-  uint16_t addr;	//Usually the high part
+	uint16_t fifo;
+	struct{
+		uint8_t addr:4;
+		uint16_t page:7;
+	};
 } MEM_ADDR;
+
+typedef union{
+	uint16_t data;
+	struct{
+		uint8_t device;
+		uint8_t reg;
+	};
+	struct{
+		uint8_t addr:4;
+		uint8_t addr_page_lsb:4;
+		uint8_t w_r_mask:1;
+		uint8_t addr_page_msb:3;
+		uint8_t addr_device:4;
+	};
+}EEPROM_CAT24C16;
 
 extern SHELL_COMMAND_CONSOLE_TYPE;
 

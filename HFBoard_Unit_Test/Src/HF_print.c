@@ -75,6 +75,7 @@ void hf_print_all(char* pBuffer){
 
 void hf_print_usb(char* pBuffer){
 	CDC_Transmit_FS(pBuffer, strlen(pBuffer));
+	HAL_Delay(1);
 }
 
 void hf_print_rs232(char* pBuffer){
