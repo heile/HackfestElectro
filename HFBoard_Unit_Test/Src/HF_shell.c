@@ -38,6 +38,8 @@ const char VERSION_STRING[] = "HF Board v0.01 by Lei and Martin for Hackfest 201
 extern UART_HandleTypeDef huart3;
 extern UART_HandleTypeDef huart1;
 
+extern SPI_HandleTypeDef hspi1;
+
 extern LED_PATTERN_NAME LED_RUNNING_PATTERN;		//
 extern SHELL_COMMAND_CONSOLE_TYPE;
 
@@ -138,12 +140,81 @@ void process_shell_command(HF_CMD* cmd, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
     		} else if (strcmp(cmd->argv[1], "eeprom") == 0) {
     			if (cmd->argc > 2 && strcmp(cmd->argv[2], "read") == 0) {
     				test_eeprom_read();
-    			} else {
+    			} else if (cmd->argc > 2 && strcmp(cmd->argv[2], "dump") == 0){
+    				uint8_t fifo[2048];
+    				eeprom_cat24c16_read(0, fifo, 2048);
+//    				void eeprom_cat24c16_write(uint16_t addr, uint8_t* out, uint16_t len)
+    			}else {
         			test_eeprom_write();
         			test_eeprom_read();
     			}
     		} else if (strcmp(cmd->argv[1], "ram") == 0) {
-    			test_ram();
+    			if (cmd->argc > 2 && strcmp(cmd->argv[2], "ec") == 0) {
+    				uint8_t fifo[8192];
+    				int i;
+    				for(i=0;i<50;i++){
+    					fifo[i]=i+3;
+    				}
+    				ram_23k640_write((uint16_t)strtol(cmd->argv[3], NULL, 0),fifo,(uint16_t)strtol(cmd->argv[4], NULL, 0));
+    			}else if (cmd->argc > 2 && strcmp(cmd->argv[2], "le") == 0) {
+    				uint8_t fifo[8192];
+    				ram_23k640_read((uint16_t)strtol(cmd->argv[3], NULL, 0),fifo,(uint16_t)strtol(cmd->argv[4], NULL, 0));
+    			}else if (cmd->argc > 2 && strcmp(cmd->argv[2], "dump") == 0) {
+    				uint8_t fifo[8192];
+    				ram_23k640_read(0x0000,fifo,8192);
+    			}else if (cmd->argc > 2 && strcmp(cmd->argv[2], "rs") == 0) {
+    				char dataOut[2];
+    				dataOut[0] = 0x05;	//Read status register
+    				dataOut[1] = 0x00;
+    				HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_RESET);
+    				HAL_SPI_TransmitReceive(&hspi1, dataOut, dataOut, 2, 100);
+    				HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_SET);
+    				printf("RAM Status: 0x%2X\r\n",dataOut[1]);
+    			}else if (cmd->argc > 2 && strcmp(cmd->argv[2], "ws") == 0) {
+    				char dataOut[2];
+					dataOut[0] = 0x01;	//Write status register
+					dataOut[1] = 0x41;	//Set Sequential mode
+					HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_RESET);
+					HAL_SPI_TransmitReceive(&hspi1, dataOut, dataOut, 2, 100);
+					HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_SET);
+    			}else if (cmd->argc > 2 && strcmp(cmd->argv[2], "rd") == 0) {
+    				int i;
+    				char dataOut[64];
+
+    				memset(dataOut, 0x00, 64);
+
+    				dataOut[0] = 0x03;	//Read Instruction
+    				dataOut[1] = 0x00;  //addr low
+    				dataOut[2] = 0x00;  //addr high
+
+    				HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_RESET);
+    				HAL_SPI_TransmitReceive(&hspi1, dataOut, dataOut, 10, 100);
+    				HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_SET);
+    				printf("RAM Read:\r\n");
+    				for (i=0;i<5;i++){
+    					printf("%02X ",dataOut[i]);
+    				}
+    				printf("\r\nRAM Read END\r\n");
+    			}else if (cmd->argc > 2 && strcmp(cmd->argv[2], "wr") == 0) {
+    				int i;
+    				char dataOut[64];
+
+    				memset(dataOut, 0x00, 64);
+
+    				dataOut[0] = 0x02;	//Write Instruction
+    				dataOut[1] = 0x00;  //addr low
+    				dataOut[2] = 0x00;  //addr high
+
+    				for (i=0; i<10; i++){
+    					dataOut[i+3] = i;
+    				}
+
+    				HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_RESET);
+    				HAL_SPI_TransmitReceive(&hspi1, dataOut, dataOut, 10, 100);
+    				HAL_GPIO_WritePin(SPI1_CS_RAM_GPIO_Port, SPI1_CS_RAM_Pin, GPIO_PIN_SET);
+    				printf("\r\nRAM Write END\r\n");
+    			}
+//    			test_ram();
     		} else if (strcmp(cmd->argv[1], "led") == 0) {
     			if (cmd->argc > 2 && strcmp(cmd->argv[2], "infinity") == 0) {
     				hf_print_back("Running infinity pattern.\r\n", buffer_type);

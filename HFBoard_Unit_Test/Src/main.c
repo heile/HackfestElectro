@@ -186,6 +186,9 @@ int main(void)
 	//HAL_TIM_Base_Start_IT(&htim6);	//Active automatiquement au moment send IR code
 
 	init_uart();
+	if (ram_23k640_init()==false){
+		printf("RAM Init Probleme\r\n");
+	}
 	HfButtonInit();
 	init_led_patterns();
 	print_on_start();

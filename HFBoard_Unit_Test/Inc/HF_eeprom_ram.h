@@ -18,8 +18,8 @@ typedef union
 {
 	uint16_t fifo;
 	struct{
-		uint8_t addr:4;		//Usually the low part
-		uint16_t page:7;	//Usually the high part
+		uint8_t addr:4;
+		uint16_t page:7;
 	};
 } MEM_ADDR;
 
@@ -37,6 +37,7 @@ typedef union{
 		uint8_t addr_device:4;
 	};
 }EEPROM_CAT24C16;
+
 
 typedef struct{
 	union{
@@ -92,6 +93,7 @@ void eeprom_print_hex(MEM_ADDR* addr, uint8_t len, SHELL_COMMAND_CONSOLE_TYPE bu
  */
 RAM_23K640 ram_23k640;
 
+bool ram_23k640_init();
 void init_ram();
 void ram_write(MEM_ADDR* addr, uint8_t* in, uint8_t len);
 void ram_read(MEM_ADDR* addr, uint8_t* out, uint8_t len);
@@ -101,9 +103,5 @@ void ram_read_str(MEM_ADDR* addr, char* out, uint8_t len);
 void ram_print_str(MEM_ADDR* addr, uint8_t len, SHELL_COMMAND_CONSOLE_TYPE buffer_type);
 void ram_print_hex(MEM_ADDR* addr, uint8_t len, SHELL_COMMAND_CONSOLE_TYPE buffer_type);
 
-
-bool ram_23k640_init();
-void ram_23k640_write(uint16_t addr,uint8_t * fifo_, uint16_t len);
-void ram_23k640_read(uint16_t addr,uint8_t * fifo, uint16_t len);
 
 #endif /* HF_EEPROM_RAM_H_ */

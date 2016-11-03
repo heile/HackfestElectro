@@ -13,7 +13,7 @@
 #include "HF_functions.h"
 
 typedef struct HF_CMD {
-	char argv[4][15];
+	char argv[5][15];
 	uint8_t argc;
 } HF_CMD;
 

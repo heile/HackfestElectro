@@ -169,7 +169,7 @@ bool i2cWrite(uint8_t addr, uint8_t reg, uint8_t data) {
  * @param size
  * @return
  */
-bool i2cMemWriteSequence(uint8_t addr, uint8_t reg, uint8_t *data, uint8_t size) {
+bool i2cMemWriteSequence(uint8_t addr, uint8_t reg, uint8_t *data, uint16_t size) {
 	if (size > 16) {
 		return false;
 	}
@@ -192,7 +192,7 @@ bool i2cMemWriteSequence(uint8_t addr, uint8_t reg, uint8_t *data, uint8_t size)
 	return true;
 }
 
-bool i2cRead(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf) {
+bool i2cRead(uint8_t addr, uint8_t reg, uint16_t len, uint8_t *buf) {
 	if (!I2C_Start()) {
 		return false;
 	}

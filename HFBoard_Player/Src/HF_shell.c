@@ -154,6 +154,16 @@ void process_shell_command(HF_CMD* cmd, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
 				} else {
 					hf_print_back("Wrong arguments\r\n", buffer_type);
 				}
+			}else if (cmd->argc > 2 && strcmp(cmd->argv[1], "ec") == 0) {
+				uint8_t fifo[8192];
+				int i;
+				for(i=0;i<50;i++){
+					fifo[i]=i+3;
+				}
+				ram_23k640_write((uint16_t)strtol(cmd->argv[2], NULL, 0),fifo,(uint16_t)strtol(cmd->argv[3], NULL, 0));
+			}else if (cmd->argc > 2 && strcmp(cmd->argv[1], "le") == 0) {
+				uint8_t fifo[8192];
+				ram_23k640_read((uint16_t)strtol(cmd->argv[2], NULL, 0),fifo,(uint16_t)strtol(cmd->argv[3], NULL, 0));
 			}
     	} else {
         	hf_print_back("Wrong arguments\r\n", buffer_type);
