@@ -49,6 +49,12 @@ extern TIM_HandleTypeDef htim17;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart3;
 
+// IR Variables.
+// Solution: 1, 2, 3, Power
+#define IR_CHAL_VALUES_COUNT 4
+uint32_t IR_CHAL_VALUES[] = {0xFF30CF, 0xFF18E7, 0xFF7A85, 0xFFA25D};
+uint8_t IR_CHAL_INDEX = 0;
+uint32_t IR_CHAL_USER_INPUT[IR_CHAL_VALUES_COUNT];
 
 bool debug_mode_enabled(){
 	if (hf_button_mode.debug_mode_flag_processed == 1){
@@ -99,6 +105,7 @@ void handle_incoming_message(){
 	if (hf_ir_reciever.state ==  HF_IR_RECEIVER_STATE_DATA_READY){
 		hf_ir_reciever.state =  HF_IR_RECEIVER_STATE_DATA_READ;
 		sprintf(buf, "IR Receive: %#X, Address %#X, Command %#X\r\n",hf_ir_reciever.data, hf_ir_reciever.address,hf_ir_reciever.command);
+		ir_callback(hf_ir_reciever.data);
 		hf_print_all_dbg(buf);
 	}
 }
@@ -209,19 +216,19 @@ void init_uart(){
 
 void init_flag_on_rom(){
 	int i;
-	char keyword[] = "Flag:           ";
+	char keyword[] = "Flag: ";
 	char buf[16];
 	char flag_buffer[FLAG_LEN];
 	char flag_part1[17];
 	char flag_part2[17];
-	MEM_ADDR flag4_eeprom_addr = {.page=0xA0, .addr=0x00};
+	MEM_ADDR flag4_eeprom_addr = {.fifo=0x24 };
 
 	// Check if the flag was written
 	eeprom_read_str(&flag4_eeprom_addr, buf, strlen(keyword));
 
 	// If not exist, write it and print message
-	//if(memcmp(keyword,buf,5) != 0){
-	if(1){
+	if(memcmp(keyword,buf,5) != 0){
+	//if(1){
 		//Print
 		hf_print_all("The flag4 does not exist. Writing it to EEPROM.\r\n");
 
@@ -231,30 +238,32 @@ void init_flag_on_rom(){
 		//Write the keyword
 		eeprom_write_str(&flag4_eeprom_addr, keyword);
 
-		// Generate part 1 and 2
-		for (i=0; i<16; i++){
-			flag_part1[i] = flag_buffer[i];
-			flag_part2[i] = flag_buffer[i+16];
-		}
-		flag_part1[16] = 0x00;
-		flag_part2[16] = 0x00;
-
 		//Write the flag
-		flag4_eeprom_addr.page += 1;
-		eeprom_write_str(&flag4_eeprom_addr, flag_part1);
-
-		flag4_eeprom_addr.page += 1;
-		eeprom_write_str(&flag4_eeprom_addr, flag_part2);
+		flag4_eeprom_addr.fifo += 6;
+		eeprom_write_str(&flag4_eeprom_addr, flag_buffer);
 	}
 }
 
+void init_flag_on_ram(){
+	char flag_buffer[FLAG_LEN];
+	char msg_buffer[64];
+	MEM_ADDR flag11_ram_addr = { .fifo=0x64 };
+
+	memset(flag_buffer,0x00,FLAG_LEN);
+	memset(msg_buffer,0x00,64);
+
+	get_flag(FLAG11,flag_buffer);
+	sprintf(msg_buffer, "Flag: %s", flag_buffer);
+	eeprom_write_str(&flag11_ram_addr, msg_buffer);
+
+}
+
 void init_wifi(){
-	uint8_t MyAddress[] = { 's', 'e', 'r', 'v', '1' };	/* My address */
-	uint8_t TxAddress[] = { 'c', 'l', 'i', 'e', '1' };	/* Receiver address */
+	uint8_t TxAddress[] = { 's', 'e', 'r', 'v', '1' };	/* My address */
+	uint8_t MyAddress[] = { 'c', 'l', 'i', 'e', '1' };	/* Receiver address */
 
-
-	NRF24L01_Init(&hspi2, 1, 32);// Definition des pins sont dans le fichier STM32CubeMX, fichier Nucleo64_Test1.ioc
-	NRF24L01_SetRF(NRF24L01_DataRate_2M, NRF24L01_OutputPower_M18dBm);
+	NRF24L01_Init(&hspi2, 30, 32);// Definition des pins sont dans le fichier STM32CubeMX, fichier Nucleo64_Test1.ioc
+	NRF24L01_SetRF(NRF24L01_DataRate_250k, NRF24L01_OutputPower_0dBm);
 	NRF24L01_SetMyAddress(MyAddress);
 	NRF24L01_SetTxAddress(TxAddress);
 }
@@ -276,20 +285,179 @@ void send_wifi_flag(){
 	HAL_GPIO_WritePin(GPIOC, TEST_OUT_PIN_Pin, SET);
 }
 
-void test_wifi(){
-	char dataOut[32] = "Love is in the air.";
-	uint8_t MyAddress[] = { 's', 'e', 'r', 'v', '1' };	/* My address */
-	uint8_t TxAddress[] = { 'c', 'l', 'i', 'e', '1' };	/* Receiver address */
+// IR Challenge
+void ir_updatePlayerInput(uint32_t input){
+  uint8_t i;
+  char fmt_char[32];
+  memset(fmt_char, 0x00, 32);
 
-	NRF24L01_Init(&hspi2, 1, 32);// Definition des pins sont dans le fichier STM32CubeMX, fichier Nucleo64_Test1.ioc
-	NRF24L01_SetRF(NRF24L01_DataRate_2M, NRF24L01_OutputPower_M18dBm);
-	NRF24L01_SetMyAddress(MyAddress);
-	NRF24L01_SetTxAddress(TxAddress);
+  IR_CHAL_USER_INPUT[IR_CHAL_INDEX] = input;
+  IR_CHAL_INDEX = (IR_CHAL_INDEX + 1) % IR_CHAL_VALUES_COUNT;
 
-	HAL_GPIO_WritePin(GPIOC, TEST_OUT_PIN_Pin, RESET);
-	NRF24L01_Transmit(dataOut);				//WiFi send "System Start!" to host
-	HAL_GPIO_WritePin(GPIOC, TEST_OUT_PIN_Pin, SET);
+  hf_print_all_dbg("Updating IR Challenge. index=");
+  hf_print_all_dbg(IR_CHAL_INDEX);
+  hf_print_all_dbg("\r\n");
+  hf_print_all_dbg("IR Challenge values: ");
+  for (i = 0; i < IR_CHAL_VALUES_COUNT; i++){
+	  sprintf(fmt_char,"a[%i]=%#x ", i, IR_CHAL_USER_INPUT[i]);
+	  hf_print_all_dbg(fmt_char);
+	  memset(fmt_char, 0x00, 32);
+  }
+  hf_print_all_dbg("\r\n");
 }
 
+bool ir_is_Valid(void){
+  uint8_t i;
+  for (i = 0; i < IR_CHAL_VALUES_COUNT; i++){
+     if (IR_CHAL_USER_INPUT[0] == IR_CHAL_VALUES[i] &&
+         IR_CHAL_USER_INPUT[1] == IR_CHAL_VALUES[(i+1)%IR_CHAL_VALUES_COUNT] &&
+         IR_CHAL_USER_INPUT[2] == IR_CHAL_VALUES[(i+2)%IR_CHAL_VALUES_COUNT] &&
+         IR_CHAL_USER_INPUT[3] == IR_CHAL_VALUES[(i+3)%IR_CHAL_VALUES_COUNT]){
+          	  return 1;
+        }
+  }
+
+  return 0;
+}
+
+void ir_printFlag(void){
+  char flag_buffer[FLAG_LEN];
+  char buf[64];
+
+  memset(flag_buffer,0x00,FLAG_LEN);
+  memset(buf,0x00,64);
+
+  get_flag(FLAG8,flag_buffer);
+  sprintf(buf,"IR Flag: %s\r\n", flag_buffer);
+
+  hf_print_all(buf);
+}
+
+void ir_callback(uint32_t input){
+	ir_updatePlayerInput(input);
+
+    if (ir_is_Valid()) {
+    	ir_printFlag();
+    	IR_CHAL_USER_INPUT[0] = 0x00;
+    	IR_CHAL_USER_INPUT[1] = 0x01;
+    	IR_CHAL_USER_INPUT[2] = 0x02;
+    	IR_CHAL_USER_INPUT[3] = 0x03;
+    }
+}
+
+/*
+ * Keeping this just for the values.
+ *
+void translateIR(char* buf, int value) {
+
+  switch(value) {
+
+  case 0xFFA25D:
+    strcpy(buf,"POWER");
+    break;
+
+  case 0xFF629D:
+    strcpy(buf,"MODE");
+    break;
+
+  case 0xFFE21D:
+    strcpy(buf,"MUTE");
+    break;
+
+  case 0xFF22DD:
+    strcpy(buf,"PLAY/PAUSE");
+    break;
+
+  case 0xFF02FD:
+    strcpy(buf,"PREV");
+    break;
+
+  case 0xFFC23D:
+    strcpy(buf,"NEXT");
+    break;
+
+  case 0xFFE01F:
+    strcpy(buf,"EQ");
+    break;
+
+  case 0xFFA857:
+    strcpy(buf,"VOL-");
+    break;
+
+  case 0xFF906F:
+    strcpy(buf,"VOL+");
+    break;
+
+  case 0xFF6897:
+    strcpy(buf,"0");
+    break;
+
+  case 0xFF9867:
+    strcpy(buf,"100+");
+    break;
+
+  case 0xFFB04F:
+    strcpy(buf,"200+");
+    break;
+
+  case 0xFF30CF:
+    strcpy(buf,"1");
+    break;
+
+  case 0xFF18E7:
+    strcpy(buf,"2");
+    break;
+
+  case 0xFF7A85:
+    strcpy(buf,"3");
+    break;
+
+  case 0xFF10EF:
+    strcpy(buf,"4");
+    break;
+
+  case 0xFF38C7:
+    strcpy(buf,"5");
+    break;
+
+  case 0xFF5AA5:
+    strcpy(buf,"6");
+    break;
+
+  case 0xFF42BD:
+    strcpy(buf,"7");
+    break;
+
+  case 0xFF4AB5:
+    strcpy(buf,"8");
+    break;
+
+  case 0xFF52AD:
+    strcpy(buf,"9");
+    break;
+
+  default:
+    strcpy(buf,"other button");
+  }
+}*/
 
 
+void write_erase_ram_flag(){
+	char flag_buffer[FLAG_LEN];
+	char msg_buffer[64];
+	char msg_buffer2[64] = "THIS_IS_NOT_A_FLAG_BUT_IT_IS_ITS_LOCATION.....................";
+	MEM_ADDR flag5_eeprom_addr = { .fifo=0x64 };
+
+	memset(flag_buffer,0x00,FLAG_LEN);
+	memset(msg_buffer,0x00,64);
+
+	get_flag(FLAG5,flag_buffer);
+
+	sprintf(msg_buffer, "Flag: %s", flag_buffer);
+
+	// Write Flag
+	eeprom_write_str(&flag5_eeprom_addr, msg_buffer);
+
+	// Write garbage
+	eeprom_write_str(&flag5_eeprom_addr, msg_buffer2);
+}

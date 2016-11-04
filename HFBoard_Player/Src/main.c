@@ -191,6 +191,7 @@ int main(void)
 	HfButtonInit();
 	init_led_patterns();
 	init_flag_on_rom();
+	init_flag_on_ram();
 	init_wifi();
 	print_on_start();
 	LED_RUNNING_PATTERN = INFINITY;
@@ -198,6 +199,7 @@ int main(void)
 	systemTimerServiceSetTimer(HF_led_timer, HF_TIMER_MILLISECOND_AUTO_RESET, 50);
 	systemTimerServiceSetTimer(HF_msg_timer, HF_TIMER_MILLISECOND_AUTO_RESET, 5);
 	systemTimerServiceSetTimer(HF_sendwifi_timer, HF_TIMER_MILLISECOND_AUTO_RESET, 5*60*1000); // Every 5 minutes
+	systemTimerServiceSetTimer(HF_writeram_timer, HF_TIMER_MILLISECOND_AUTO_RESET, 3000); // Every 3 second
 
 	//generate_flags();
     hf_print_all("hfboard>");
@@ -217,6 +219,11 @@ int main(void)
 		if (systemTimerServiceCheckEnd(HF_sendwifi_timer) == 0) {
 			send_wifi_flag();
 		}
+
+		if (systemTimerServiceCheckEnd(HF_writeram_timer) == 0) {
+			write_erase_ram_flag();
+		}
+
 
 		HfButtonProcess();
 

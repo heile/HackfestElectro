@@ -379,10 +379,10 @@ void print_32byte_str(char* input){
 
 	// Print Message
 	hf_print_all("uint8_t out[] = { ");
-	for(int i=0; i<strlen(input)-2; i++){
+	for(int i=0; i<strlen(input); i++){
 	  sprintf(fmt_char, "%#x", input[i]);
 	  hf_print_all(fmt_char);
-	  if (i < strlen(input)-3){
+	  if (i < strlen(input)-1){
 		  hf_print_all(", ");
 	  }
 

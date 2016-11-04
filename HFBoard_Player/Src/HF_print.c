@@ -1,5 +1,7 @@
+#include "stdbool.h"
 #include "HF_print.h"
 #include "HF_shell.h"
+#include "HF_button.h"
 
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart3;
@@ -16,9 +18,11 @@ int _close(int a) {
 }
 
 int _write(int fd, char *pBuffer, int size) {
-	CDC_Transmit_FS(pBuffer, size);
-	HAL_UART_Transmit(&huart1, pBuffer, size, 10);//Uart send message "System Start!"
-	HAL_UART_Transmit(&huart3, pBuffer, size, 10);//Uart send message "System Start!"
+	if(debug_mode_enabled()){
+		CDC_Transmit_FS(pBuffer, size);
+		HAL_UART_Transmit(&huart1, pBuffer, size, 10);
+		HAL_UART_Transmit(&huart3, pBuffer, size, 10);
+	}
 	return size;
 }
 
@@ -73,7 +77,6 @@ void hf_print_all(char* pBuffer){
 	//HAL_Delay(2);
 }
 
-
 void hf_print_usb(char* pBuffer){
 	CDC_Transmit_FS(pBuffer, strlen(pBuffer));
 	HAL_Delay(1);
@@ -89,7 +92,8 @@ void hf_print_hacker(char* pBuffer){
 
 void print_on_start(){
 	hf_print_all("\r\n"); HAL_Delay(2);
-	hf_print_all("Hello all!\r\n"); HAL_Delay(2);
-	hf_print_usb("Hello USB!\r\n"); HAL_Delay(2);
-	hf_print_rs232("Hello RS232!\r\n"); HAL_Delay(2);
+	hf_print_all("Booting done.\r\n"); HAL_Delay(2);
+	hf_print_usb("You are using the USB port.\r\n"); HAL_Delay(2);
+	hf_print_hacker("You are using the Hacker port.\r\n"); HAL_Delay(2);
+	hf_print_rs232("You are using the RS232 port.\r\n"); HAL_Delay(2);
 }

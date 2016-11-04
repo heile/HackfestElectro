@@ -363,11 +363,13 @@ void ram_read(MEM_ADDR* addr, uint8_t* out, uint8_t len){
 }
 
 void ram_write_str(MEM_ADDR* addr, char* in){
-	ram_write(addr, (uint8_t *)in, strlen(in));
+	//ram_write(addr, (uint8_t *)in, strlen(in));
+	ram_23k640_write(addr->fifo, in,  strlen(in));
 }
 
 void ram_read_str(MEM_ADDR* addr, char* out, uint8_t len){
-	ram_read(addr, (uint8_t *)out, len);
+	//ram_read(addr, (uint8_t *)out, len);
+	ram_23k640_read(addr->fifo, out,  len);
 }
 
 void ram_print_str(MEM_ADDR* addr, uint8_t len, SHELL_COMMAND_CONSOLE_TYPE buffer_type){

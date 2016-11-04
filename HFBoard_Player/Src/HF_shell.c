@@ -50,8 +50,8 @@ extern SHELL_COMMAND_CONSOLE_TYPE;
 
 //extern uint8_t* FLAG_3;
 
-MEM_ADDR ROM_SELECTED_ADDR = {.page=0xA0, .addr=0};
-MEM_ADDR RAM_SELECTED_ADDR = {.page=0, .addr=0};
+MEM_ADDR ROM_SELECTED_ADDR = { .fifo=900 }; 	// max = 2048
+MEM_ADDR RAM_SELECTED_ADDR = { .fifo=1600 };	// max = 8192
 
 
 void HFShellCommand(char * command, SHELL_COMMAND_CONSOLE_TYPE buffer_type) {
@@ -73,34 +73,75 @@ void process_shell_command(HF_CMD* cmd, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
 	char flag_buffer[FLAG_LEN];
 
     if (strcmp(cmd->argv[0], "help") == 0) {
+    	/*
+    	 * For all Shells.
+    	 */
     	hf_print_back("Welcome on the reactor remote. Standard commands are:\r\n", buffer_type);
     	hf_print_back("  help: Print this help message. \r\n", buffer_type);
     	hf_print_back("  version: Print version. \r\n", buffer_type);
     	hf_print_back("\r\n", buffer_type);
-    	hf_print_back("Enable the debug mode for more features.\r\n", buffer_type);
+    	hf_print_back("Enable the debug mode for more output.\r\n", buffer_type);
        	hf_print_back("\r\n", buffer_type);
-    	hf_print_back("rom se <1byte (0x..)> <1byte (0x..)>: Select a page and address to read/write.\r\n", buffer_type);
-    	hf_print_back("rom wr t <string_no_space>: Write text (up to 96 chars).\r\n", buffer_type);
-    	hf_print_back("rom rd t <len>: Read text (up to 96 chars).\r\n", buffer_type);
-    	hf_print_back("rom rd h <len>: Read hex (up to 96 chars).\r\n", buffer_type);
-    	hf_print_back("ram se <1byte (0x..)> <1byte (0x..)>: Select a page and address to read/write.\r\n", buffer_type);
-    	hf_print_back("ram wr t <string_no_space>: Write text (up to 96 chars).\r\n", buffer_type);
-    	hf_print_back("ram rd t <len>: Read text (up to 96 chars).\r\n", buffer_type);
-    	hf_print_back("ram rd h <len>: Read hex (up to 96 chars).\r\n", buffer_type);
-    	hf_print_back("ir wr t <string_no_space>: Write text (up to 96 chars).\r\n", buffer_type);
-    	hf_print_back("wifi wr t <string_no_space>: Write text (up to 96 chars).\r\n", buffer_type);
-       	hf_print_back("\r\n", buffer_type);
-     	if (buffer_type == SHELL_CONSOLE_TYPE_HACKER_UART_PORT){
-    		hf_print_back("Some commands hidden in the Hacker UART port.\r\n", buffer_type);
-    		hf_print_back("  flag: Print a flag.\r\n", buffer_type);
+
+    	/*
+    	 * For USB only
+    	 */
+     	if (buffer_type == SHELL_CONSOLE_TYPE_USB_VCP){
+
+     		hf_print_back("Some additional commands...\r\n", buffer_type);
+     		hf_print_back("  ir wr t <string_no_space>: Write text.\r\n", buffer_type);
+     		hf_print_back("  ir wr h <0x...>: Write hex.\r\n", buffer_type);
+     		hf_print_back("  wifi wr t <string_no_space>: Write text.\r\n", buffer_type);
+     		hf_print_back("  wifi wr h <0x...>: Write hex.\r\n", buffer_type);
+     	   	hf_print_back("\r\n", buffer_type);
     	}
+
+    	/*
+    	 * For RS232 only
+    	 */
+		if (buffer_type == SHELL_CONSOLE_TYPE_RS232){
+			hf_print_back("Some additional commands...\r\n", buffer_type);
+	    	hf_print_back("  rom se <1-2byte (0x..)>: Select an address to read/write.\r\n", buffer_type);
+	    	hf_print_back("  rom wr t <string_no_space>: Write text (up to 96 chars).\r\n", buffer_type);
+	    	hf_print_back("  rom rd t <len>: Read text (up to 96 chars).\r\n", buffer_type);
+	    	hf_print_back("  rom rd h <len>: Read hex (up to 96 chars).\r\n", buffer_type);
+	    	hf_print_back("  ram se <1-2byte (0x..)>: Select an address to read/write.\r\n", buffer_type);
+	    	hf_print_back("  ram wr t <string_no_space>: Write text (up to 96 chars).\r\n", buffer_type);
+	    	hf_print_back("  ram rd t <len>: Read text (up to 96 chars).\r\n", buffer_type);
+	    	hf_print_back("  ram rd h <len>: Read hex (up to 96 chars).\r\n", buffer_type);
+	    	hf_print_back("\r\n", buffer_type);
+		}
+
+    	/*
+    	 * For hacker only
+    	 */
+     	if (buffer_type == SHELL_CONSOLE_TYPE_HACKER_UART_PORT){
+    		hf_print_back("Some hidden commands...\r\n", buffer_type);
+    		hf_print_back("  flag: Print a flag.\r\n", buffer_type);
+    		hf_print_back("\r\n", buffer_type);
+     	}
+
+
     } else if (strcmp(cmd->argv[0], "version") == 0) {
     	hf_print_back(VERSION_STRING, buffer_type);
-    } else if (strcmp(cmd->argv[0], "rom") == 0){
+    }
+    else if (strcmp(cmd->argv[0], "ir") == 0){
+    	if (cmd->argc > 2){
+			process_ir_wr(cmd->argv[2], buffer_type);
+		} else {
+			hf_print_back("Wrong arguments\r\n", buffer_type);
+		}
+	} else if (strcmp(cmd->argv[0], "wifi") == 0){
+		if (cmd->argc > 2){
+			process_wifi_wr(cmd->argv[2], buffer_type);
+		} else {
+			hf_print_back("Wrong arguments\r\n", buffer_type);
+		}
+	} else if (strcmp(cmd->argv[0], "rom") == 0){
     	if (cmd->argc > 1){
 			if (strcmp(cmd->argv[1], "se") == 0) {		// rom select
-				if (cmd->argc > 3){
-					process_rom_select(cmd->argv[2], cmd->argv[3], buffer_type);
+				if (cmd->argc > 2){
+					process_rom_select(cmd->argv[2], buffer_type);
 				} else if (cmd->argc == 2){
 					process_rom_select_print(buffer_type);
 				} else {
@@ -135,8 +176,8 @@ void process_shell_command(HF_CMD* cmd, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
     } else if (strcmp(cmd->argv[0], "ram") == 0){
     	if (cmd->argc > 1){
 			if (strcmp(cmd->argv[1], "se") == 0) {		// rom select
-				if (cmd->argc > 3){
-					process_ram_select(cmd->argv[2], cmd->argv[3], buffer_type);
+				if (cmd->argc > 2){
+					process_ram_select(cmd->argv[2], buffer_type);
 				} else if (cmd->argc == 2){
 					process_ram_select_print(buffer_type);
 				} else {
@@ -154,24 +195,20 @@ void process_shell_command(HF_CMD* cmd, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
 				} else {
 					hf_print_back("Wrong arguments\r\n", buffer_type);
 				}
-			}else if (cmd->argc > 2 && strcmp(cmd->argv[1], "ec") == 0) {
-				uint8_t fifo[8192];
-				int i;
-				for(i=0;i<50;i++){
-					fifo[i]=i+3;
+			}else if (strcmp(cmd->argv[1], "le") == 0) {
+				uint8_t buffer[2048];
+				ram_23k640_read((uint8_t)strtol(cmd->argv[2], NULL, 0),buffer,(uint16_t)strtol(cmd->argv[3], NULL, 0));
+			} else if (strcmp(cmd->argv[1], "ec") == 0) {
+				int i=0;
+				uint8_t buffer[2048];
+				for (i=0;i<30;i++){
+					buffer[i]=i;
 				}
-				ram_23k640_write((uint16_t)strtol(cmd->argv[2], NULL, 0),fifo,(uint16_t)strtol(cmd->argv[3], NULL, 0));
-			}else if (cmd->argc > 2 && strcmp(cmd->argv[1], "le") == 0) {
-				uint8_t fifo[8192];
-				ram_23k640_read((uint16_t)strtol(cmd->argv[2], NULL, 0),fifo,(uint16_t)strtol(cmd->argv[3], NULL, 0));
+				ram_23k640_write((uint8_t)strtol(cmd->argv[2], NULL, 0),buffer,(uint16_t)strtol(cmd->argv[3], NULL, 0));
 			}
     	} else {
         	hf_print_back("Wrong arguments\r\n", buffer_type);
     	}
-    } else if (strcmp(cmd->argv[0], "ir") == 0){
-
-    } else if (strcmp(cmd->argv[0], "wifi") == 0){
-
     }
 
     // Commands specific to HACKER port
@@ -184,96 +221,27 @@ void process_shell_command(HF_CMD* cmd, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
            	hf_print_hacker("\r\n");
         }
     }
-
-
-    /*
-    else if (strcmp(cmd->argv[0], "test") == 0) {
-    	if (cmd->argc > 1){
-    		if (strcmp(cmd->argv[1], "all") == 0) {
-    			hf_print_back("Testing back in your shell!\r\n", buffer_type);
-    			hf_print_usb("Test USB!\r\n");
-    			hf_print_rs232("Test RS232!\r\n");
-    			hf_print_hacker("Test Hacker!\r\n");
-    			test_wifi();
-    			test_eeprom_write();
-    			test_eeprom_read();
-    			test_ram();
-				hf_print_back("Running double infinity pattern.\r\n", buffer_type);
-				LED_RUNNING_PATTERN = DOUBLE_INFINITY;
-    		} else if (strcmp(cmd->argv[1], "usb") == 0) {
-    			hf_print_usb("Test USB!\r\n");
-    		} else if (strcmp(cmd->argv[1], "rs232") == 0) {
-    			hf_print_rs232("Test RS232!\r\n");
-    		} else if (strcmp(cmd->argv[1], "hacker") == 0) {
-    			hf_print_hacker("Test Hacker!\r\n");
-    		} else if (strcmp(cmd->argv[1], "wifi") == 0) {
-    			test_wifi();
-    		} else if (strcmp(cmd->argv[1], "eeprom") == 0) {
-    			if (cmd->argc > 2 && strcmp(cmd->argv[2], "read") == 0) {
-    				test_eeprom_read();
-    			} else {
-        			test_eeprom_write();
-        			test_eeprom_read();
-    			}
-    		} else if (strcmp(cmd->argv[1], "ram") == 0) {
-    			test_ram();
-    		} else if (strcmp(cmd->argv[1], "led") == 0) {
-    			if (cmd->argc > 2 && strcmp(cmd->argv[2], "infinity") == 0) {
-    				hf_print_back("Running infinity pattern.\r\n", buffer_type);
-    				LED_RUNNING_PATTERN = INFINITY;
-    			} else if (cmd->argc > 2 && strcmp(cmd->argv[2], "dinfinity") == 0) {
-    				hf_print_back("Running double infinity pattern.\r\n", buffer_type);
-    				LED_RUNNING_PATTERN = DOUBLE_INFINITY;
-    			} else if (cmd->argc > 2 && strcmp(cmd->argv[2], "dloop") == 0) {
-    				hf_print_back("Running double loop pattern.\r\n", buffer_type);
-    				LED_RUNNING_PATTERN = DOUBLE_LOOP;
-    			} else {
-    				hf_print_back("Running infinity pattern.\r\n", buffer_type);
-    				LED_RUNNING_PATTERN = INFINITY;
-    			}
-    		} else if (strcmp(cmd->argv[1], "ir") == 0) {
-    			if (cmd->argc > 2 && strcmp(cmd->argv[2], "tx") == 0) {
-    				test_ir_transmitter();
-    			}else{
-    				test_ir_transmitter();
-    			}
-    		}
-
-
-    	}
-    } else if (strcmp(cmd->argv[0], "enc_flags") == 0) {
-    	generate_flags();
-    }else if (strcmp(cmd->argv[0], "version") == 0) {
-    	hf_print_back(VERSION_STRING, buffer_type);
-    }
-    */
 }
 
 void process_rom_select_print(SHELL_COMMAND_CONSOLE_TYPE buffer_type){
 	char buf[32];
-	sprintf(buf, "Page=%#x, Addr=%#x\r\n", ROM_SELECTED_ADDR.page, ROM_SELECTED_ADDR.addr);
+	sprintf(buf, "Addr=%#x\r\n", ROM_SELECTED_ADDR.fifo);
 	hf_print_back(buf, buffer_type);
 }
 
-void process_rom_select(char* page, char* addr, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
-	uint16_t iPage;
+void process_rom_select(char* addr, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
 	uint16_t iAddr;
 
-	// Validate addresses
-	if (strlen(page) > 3 && strlen(addr) > 2){
-		hf_print_back("Invalid address. Page <= 127; Addr <= 15\r\n", buffer_type);
-	}
-	// TODO: Put more validations based on the component.
-
-	iPage = (uint16_t)strtol(page, NULL, 0);
 	iAddr = (uint16_t)strtol(addr, NULL, 0);
-	//sscanf(page, "%x", &iPage);
-	//sscanf(addr, "%x", &iAddr);
 
-	ROM_SELECTED_ADDR.page = iPage;
-	ROM_SELECTED_ADDR.addr = iAddr;
+	// Validate addresses
+	if (iAddr > 0 && iAddr < 2048){
+		ROM_SELECTED_ADDR.fifo = iAddr;
+		hf_print_back("Address selected.\r\n", buffer_type);
 
-	hf_print_back("Address selected.\r\n", buffer_type);
+	} else {
+		hf_print_back("Invalid address.\r\n", buffer_type);
+	}
 }
 
 void process_rom_wr(char* type, char* in, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
@@ -305,33 +273,24 @@ void process_rom_rd(char* type, char* len, SHELL_COMMAND_CONSOLE_TYPE buffer_typ
 }
 
 
-
-
 void process_ram_select_print(SHELL_COMMAND_CONSOLE_TYPE buffer_type){
 	char buf[32];
-	sprintf(buf, "Page=%#x, Addr=%#x\r\n", RAM_SELECTED_ADDR.page, RAM_SELECTED_ADDR.addr);
+	sprintf(buf, "Addr=%#x\r\n", RAM_SELECTED_ADDR.fifo);
 	hf_print_back(buf, buffer_type);
 }
 
-void process_ram_select(char* page, char* addr, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
-	uint16_t iPage;
+void process_ram_select(char* addr, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
 	uint16_t iAddr;
 
+	iAddr = (uint16_t)strtol(addr, NULL, 0);
+
 	// Validate addresses
-	if (strlen(page) > 4 && strlen(addr) > 4){
+	if (iAddr > 0 && iAddr < 8192){
+		RAM_SELECTED_ADDR.fifo = iAddr;
+		hf_print_back("Address selected.\r\n", buffer_type);
+	} else {
 		hf_print_back("Invalid address.\r\n", buffer_type);
 	}
-	// TODO: Put more validations based on the component.
-
-	iPage = (uint16_t)strtol(page, NULL, 0);
-	iAddr = (uint16_t)strtol(addr, NULL, 0);
-	//sscanf(page, "%x", &iPage);
-	//sscanf(addr, "%x", &iAddr);
-
-	RAM_SELECTED_ADDR.page = iPage;
-	RAM_SELECTED_ADDR.addr = iAddr;
-
-	hf_print_back("Address selected.\r\n", buffer_type);
 }
 
 void process_ram_wr(char* type, char* in, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
@@ -360,6 +319,29 @@ void process_ram_rd(char* type, char* len, SHELL_COMMAND_CONSOLE_TYPE buffer_typ
 	} else {
 		ram_print_str(&RAM_SELECTED_ADDR, iLen, buffer_type);
 	}
+}
+
+void process_ir_wr(char* in, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
+	if (hf_ir_transmitter.state == HF_IR_TRANSMITTER_STATE_READY){
+		//HfIrTransmitterSetData32(0xabcd1234,HF_IR_TRANSMITTER_CODE_TYPE_NEC);
+		HfIrTransmitterSetData32(0xdeadc0fe,HF_IR_TRANSMITTER_CODE_TYPE_NEC);
+		hf_ir_transmitter.state = HF_IR_TRANSMITTER_STATE_SNED;
+	}
+	hf_print_back("Message sent..\r\n", buffer_type);
+}
+
+void process_wifi_wr(char* in, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
+	// validations
+	if (strlen(in) > 32){
+		hf_print_back("Message too long. Max 32 bytes\r\n", buffer_type);
+		return;
+	}
+
+	HAL_GPIO_WritePin(GPIOC, TEST_OUT_PIN_Pin, RESET);
+	NRF24L01_Transmit(in);
+	HAL_GPIO_WritePin(GPIOC, TEST_OUT_PIN_Pin, SET);
+
+	hf_print_back("Message sent.\r\n", buffer_type);
 }
 
 void HF_ShellCommandSetBuffer(char c, SHELL_COMMAND_CONSOLE_TYPE buffer_type) {

@@ -99,3 +99,14 @@ void HfIrTransmitterSetData(uint8_t address, uint8_t command, HF_IR_TRANSMITTER_
 		hf_ir_transmitter.type_code = type_code;
 	}
 }
+
+void HfIrTransmitterSetData32(uint32_t data, HF_IR_TRANSMITTER_CODE_TYPE type_code){
+	switch (type_code){
+	case HF_IR_TRANSMITTER_CODE_TYPE_NEC:
+		hf_ir_transmitter.nec_code.address = (data >> 24) & 0xFF;
+		hf_ir_transmitter.nec_code.address_inverse = (data >> 16) & 0xFF;
+		hf_ir_transmitter.nec_code.command = (data >> 8) & 0xFF;
+		hf_ir_transmitter.nec_code.command_inverse = data & 0xFF;
+		hf_ir_transmitter.type_code = type_code;
+	}
+}

@@ -53,13 +53,18 @@ uint8_t FLAG9[] = { 0x58, 0xef, 0xc7, 0xfa, 0xb5, 0xf3, 0xfe, 0x40, 0x50, 0x54, 
 uint8_t FLAG10[] = { 0xe0, 0x5c, 0x12, 0x7b, 0x77, 0xe7, 0x38, 0x49, 0xc0, 0xf4, 0x22, 0x1f, 0x3, 0x3c, 0x2c, 0x34,
                   0xf1, 0x9f, 0x21, 0x3b, 0xc4, 0xd9, 0xde, 0x8, 0xf5, 0xa6, 0x3, 0x2e, 0xf4, 0xab};
 //Decrypted string: YsD2RK0rlrv7uEGx6YxYAEbYfrg7p7ew
+uint8_t FLAG11[] = { 0xb9, 0xe6, 0xe2, 0xd6, 0xd4, 0x9d, 0x2c, 0xbe, 0x70, 0xe8, 0xb3, 0xbf, 0xf2, 0x97, 0xa3, 0xf9,
+                  0x8b, 0xc, 0xde, 0x11, 0xb6, 0xe1, 0xc, 0xb2, 0x9d, 0x2f, 0x84, 0xfe, 0x73, 0x2, 0xf4, 0xc
+                  };
 
+//Decrypted string: KtriJ6mCcaNQrXnjNEYBhhOunAvHiaZt
 
 
 // THIS FUNCTION MUST BE COMMENTED BEFORE THE CTF
-void generate_flags(){}
-/*
+//void generate_flags(){}
+
 void generate_flags(){
+/*
 	char flag1[] = "6mYNVO73MLO6Q89uYoFJUMRfmhAYxCN0";
 	char flag2[] = "BWBFe9NXeEkh1bsqMjt77WfhtvCPlwFk";
 	char flag3[] = "g7D0QUGJs0KnObXW4cBgGHtGUQZTbSNb";
@@ -70,7 +75,10 @@ void generate_flags(){
 	char flag8[] = "hyN81aRn8w2ZxaWgfDemXZmxNKuil2J9";
 	char flag9[] = "MumWs7g5Guwgh7NTlqXwt5C4Xi9nMkg3";
 	char flag10[] = "YsD2RK0rlrv7uEGx6YxYAEbYfrg7p7ew";
+	*/
+	char flag11[] = "KtriJ6mCcaNQrXnjNEYBhhOunAvHiaZt";
 
+/*
 	test_encrypt_message(flag1);
 	test_encrypt_message(flag2);
 	test_encrypt_message(flag3);
@@ -81,6 +89,8 @@ void generate_flags(){
 	test_encrypt_message(flag8);
 	test_encrypt_message(flag9);
 	test_encrypt_message(flag10);
+	*/
+	test_encrypt_message(flag11);
 }
-*/
+
 
