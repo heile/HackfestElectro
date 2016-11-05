@@ -323,7 +323,7 @@ int main(void)
 
 	strcpy(dataOut, "System Start!\n\r");	//Message to print and send
 
-	NRF24L01_Init(&hspi2, 1, 32);// Definition des pins sont dans le fichier STM32CubeMX, fichier Nucleo64_Test1.ioc
+	NRF24L01_Init(&hspi2, 30, 32);// Definition des pins sont dans le fichier STM32CubeMX, fichier Nucleo64_Test1.ioc
 	NRF24L01_SetRF(NRF24L01_DataRate_2M, NRF24L01_OutputPower_M6dBm);
 	NRF24L01_SetMyAddress(MyAddress);
 	NRF24L01_SetTxAddress(TxAddress);

@@ -169,6 +169,10 @@ void process_shell_command(HF_CMD* cmd, SHELL_COMMAND_CONSOLE_TYPE buffer_type){
 					buffer[i]=i;
 				}
 				eeprom_cat24c16_write((uint8_t)strtol(cmd->argv[2], NULL, 0),buffer,(uint16_t)strtol(cmd->argv[3], NULL, 0));
+			} else if (strcmp(cmd->argv[1], "erase") == 0) {
+				uint8_t buffer[100];
+				memset(buffer,0x00,100);
+				eeprom_cat24c16_write((uint8_t)strtol(cmd->argv[2], NULL, 0),buffer,(uint16_t)strtol(cmd->argv[3], NULL, 0));
 			}
     	} else {
         	hf_print_back("Wrong arguments\r\n", buffer_type);

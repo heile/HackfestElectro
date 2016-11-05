@@ -80,7 +80,7 @@ void eeprom_cat24c16_write(uint16_t addr, uint8_t* out, uint16_t len){
 			//	printf("     ");
 			//}
 			if (len>(16-(addr & 0x000F))){
-				i2cMemWriteSequence(0xA0|((addr>>4)&0x70),(addr&0xFF), out, 16-(addr & 0x000F));
+				i2cMemWriteSequence(0xA0|((addr>>4)&0x70),(addr&0xFF), out, 16-(addr & 0x000F));HAL_Delay(5);
 				//for(i=0;i<16-(addr & 0x000F);i++){
 				//	printf("%02X   ",out[i]);
 				//}
@@ -88,7 +88,7 @@ void eeprom_cat24c16_write(uint16_t addr, uint8_t* out, uint16_t len){
 				out+= 16-(addr & 0x000F);
 				addr += 16-(addr & 0x000F);
 			}else{
-				i2cMemWriteSequence(0xA0|((addr>>4)&0x70),(addr&0xFF), out, len);
+				i2cMemWriteSequence(0xA0|((addr>>4)&0x70),(addr&0xFF), out, len);HAL_Delay(5);
 				//for(i=0;i<len;i++){
 				//	printf("%02X   ",out[i]);
 				//}
@@ -96,7 +96,7 @@ void eeprom_cat24c16_write(uint16_t addr, uint8_t* out, uint16_t len){
 			}
 		}else{
 			if (len>16){
-				i2cMemWriteSequence(0xA0|((addr>>4)&0x70),(addr&0xFF),out,16);
+				i2cMemWriteSequence(0xA0|((addr>>4)&0x70),(addr&0xFF),out,16);HAL_Delay(5);
 				//for(i=0;i<16;i++){
 				//	printf("%02X   ",out[i]);
 				//}
@@ -104,7 +104,7 @@ void eeprom_cat24c16_write(uint16_t addr, uint8_t* out, uint16_t len){
 				out += 16;
 				addr += 16;
 			}else{
-				i2cMemWriteSequence(0xA0|((addr>>4)&0x70),(addr&0xFF),out,len);
+				i2cMemWriteSequence(0xA0|((addr>>4)&0x70),(addr&0xFF),out,len);HAL_Delay(5);
 				//for(i=0;i<len;i++){
 				//	printf("%02X   ",out[i]);
 				//}
